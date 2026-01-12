@@ -11,6 +11,18 @@ import { categories, conditions } from "@/data/listings";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const listingSchema = z.object({
+  title: z.string().min(3, "Titeln måste vara minst 3 tecken").max(200, "Titeln får max vara 200 tecken"),
+  description: z.string().min(10, "Beskrivningen måste vara minst 10 tecken").max(5000, "Beskrivningen får max vara 5000 tecken"),
+  price: z.number().int().positive("Priset måste vara positivt").max(10000000, "Priset får max vara 10 000 000 kr"),
+  category: z.string().min(1, "Välj en kategori"),
+  condition: z.string().min(1, "Välj skick"),
+  brand: z.string().min(1, "Ange märke").max(100, "Märket får max vara 100 tecken"),
+  year: z.string().regex(/^\d{4}$/, "År måste vara fyra siffror (t.ex. 1972)").optional().or(z.literal("")),
+  location: z.string().min(2, "Ange plats (minst 2 tecken)").max(200, "Platsen får max vara 200 tecken"),
+});
 
 const CreateListing = () => {
   const navigate = useNavigate();
@@ -42,6 +54,31 @@ const CreateListing = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    try {
+      listingSchema.parse({
+        ...formData,
+        price: formData.price ? parseInt(formData.price) : 0,
+        year: formData.year || undefined,
+      });
+      setErrors({});
+      return true;
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        err.errors.forEach((error) => {
+          if (error.path[0]) {
+            newErrors[error.path[0] as string] = error.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -56,25 +93,38 @@ const CreateListing = () => {
       return;
     }
 
+    if (!validateForm()) {
+      toast.error("Kontrollera formuläret");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const { error } = await supabase.from("listings").insert({
         user_id: user.id,
-        title: formData.title,
-        description: formData.description,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         price: parseInt(formData.price),
         category: formData.category,
         condition: formData.condition,
-        brand: formData.brand,
+        brand: formData.brand.trim(),
         year: formData.year || null,
-        location: formData.location,
+        location: formData.location.trim(),
         images: images,
       });
 
       if (error) {
         console.error("Error creating listing:", error);
-        toast.error("Kunde inte skapa annonsen");
+        if (error.message.includes("price_range")) {
+          toast.error("Priset måste vara mellan 1 och 10 000 000 kr");
+        } else if (error.message.includes("title_length")) {
+          toast.error("Titeln måste vara mellan 3 och 200 tecken");
+        } else if (error.message.includes("description_length")) {
+          toast.error("Beskrivningen måste vara mellan 10 och 5000 tecken");
+        } else {
+          toast.error("Kunde inte skapa annonsen");
+        }
         return;
       }
 
@@ -135,13 +185,15 @@ const CreateListing = () => {
                     value={formData.title}
                     onChange={handleChange}
                     placeholder="t.ex. Marantz 2270 Stereo Receiver"
+                    maxLength={200}
                     required
                   />
+                  {errors.title && <p className="text-destructive text-sm mt-1">{errors.title}</p>}
                 </div>
 
                 <div>
                   <label className="text-sm text-muted-foreground mb-1.5 block">
-                    Beskrivning *
+                    Beskrivning * <span className="text-xs">({formData.description.length}/5000)</span>
                   </label>
                   <Textarea
                     name="description"
@@ -149,9 +201,11 @@ const CreateListing = () => {
                     onChange={handleChange}
                     placeholder="Beskriv produkten i detalj - skick, historia, eventuella defekter..."
                     rows={5}
+                    maxLength={5000}
                     required
                     className="bg-secondary/50 border-border"
                   />
+                  {errors.description && <p className="text-destructive text-sm mt-1">{errors.description}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,8 +219,11 @@ const CreateListing = () => {
                       value={formData.price}
                       onChange={handleChange}
                       placeholder="15000"
+                      min={1}
+                      max={10000000}
                       required
                     />
+                    {errors.price && <p className="text-destructive text-sm mt-1">{errors.price}</p>}
                   </div>
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">
@@ -177,8 +234,10 @@ const CreateListing = () => {
                       value={formData.location}
                       onChange={handleChange}
                       placeholder="t.ex. Stockholm"
+                      maxLength={200}
                       required
                     />
+                    {errors.location && <p className="text-destructive text-sm mt-1">{errors.location}</p>}
                   </div>
                 </div>
               </div>
@@ -241,8 +300,10 @@ const CreateListing = () => {
                       value={formData.brand}
                       onChange={handleChange}
                       placeholder="t.ex. Marantz, Technics, JBL"
+                      maxLength={100}
                       required
                     />
+                    {errors.brand && <p className="text-destructive text-sm mt-1">{errors.brand}</p>}
                   </div>
                   <div>
                     <label className="text-sm text-muted-foreground mb-1.5 block">
@@ -253,7 +314,10 @@ const CreateListing = () => {
                       value={formData.year}
                       onChange={handleChange}
                       placeholder="t.ex. 1972"
+                      maxLength={4}
+                      pattern="\d{4}"
                     />
+                    {errors.year && <p className="text-destructive text-sm mt-1">{errors.year}</p>}
                   </div>
                 </div>
               </div>
