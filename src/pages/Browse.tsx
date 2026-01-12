@@ -26,31 +26,14 @@ const Browse = () => {
       try {
         const { data, error } = await supabase
           .from("listings")
-          .select(`
-            id,
-            title,
-            description,
-            price,
-            category,
-            condition,
-            brand,
-            year,
-            location,
-            images,
-            created_at,
-            user_id,
-            profiles!listings_user_id_fkey (
-              display_name,
-              phone
-            )
-          `)
+          .select("*")
           .eq("status", "active")
           .order("created_at", { ascending: false });
 
         if (error) {
           console.error("Error fetching listings:", error);
         } else if (data) {
-          const formattedListings: Listing[] = data.map((item: any) => ({
+          const formattedListings: Listing[] = data.map((item) => ({
             id: item.id,
             title: item.title,
             description: item.description,
@@ -58,14 +41,12 @@ const Browse = () => {
             category: item.category,
             condition: item.condition,
             brand: item.brand,
-            year: item.year,
+            year: item.year || "",
             location: item.location,
-            sellerName: item.profiles?.display_name || "Säljare",
+            sellerName: "Säljare",
             sellerEmail: "",
-            sellerPhone: item.profiles?.phone,
             images: item.images || [],
             createdAt: item.created_at,
-            isFromDb: true,
           }));
           setDbListings(formattedListings);
         }
