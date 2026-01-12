@@ -134,10 +134,12 @@ const Header = () => {
                 {user ? (
                   <>
                     <Link to={`/profil/${user.id}`} onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" className="w-full relative">
-                        <User className="w-4 h-4" />
+                      <Button variant="outline" className="w-full justify-start">
+                        <span className="relative">
+                          <User className="w-4 h-4" />
+                          {isCreator && <CreatorBadge className="-top-1.5 -right-1.5" />}
+                        </span>
                         Min profil
-                        {isCreator && <CreatorBadge />}
                       </Button>
                     </Link>
                     <Link to="/create" onClick={() => setIsMenuOpen(false)}>
