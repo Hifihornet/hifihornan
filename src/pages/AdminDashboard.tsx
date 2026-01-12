@@ -587,9 +587,9 @@ const AdminDashboard = () => {
                       {profiles.map((profile) => (
                         <div
                           key={profile.id}
-                          className="p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors"
+                          className="p-4 hover:bg-secondary/30 transition-colors"
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex items-start gap-3">
                             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden shrink-0">
                               {profile.avatar_url ? (
                                 <img
@@ -601,17 +601,17 @@ const AdminDashboard = () => {
                                 <User className="w-5 h-5 text-muted-foreground" />
                               )}
                             </div>
-                            <div className="min-w-0">
+                            <div className="flex-1 min-w-0">
                               <Link
                                 to={`/profil/${profile.user_id}`}
                                 className="font-medium text-foreground hover:text-primary truncate block"
                               >
                                 {profile.display_name || "Okänd användare"}
                               </Link>
-                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
                                 <span>{profile.listing_count} annonser</span>
-                                <span>•</span>
-                                <span>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="text-xs sm:text-sm">
                                   {profile.last_seen
                                     ? `Online ${formatDistanceToNow(new Date(profile.last_seen), {
                                         addSuffix: true,
@@ -620,55 +620,61 @@ const AdminDashboard = () => {
                                     : "Aldrig online"}
                                 </span>
                               </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {canSendDirectMessages && profile.user_id !== user?.id && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openDirectMessageDialog(profile)}
-                                title="Skicka meddelande"
-                              >
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {canDeleteUsers && profile.user_id !== user?.id && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    disabled={deletingId === profile.user_id}
-                                  >
-                                    {deletingId === profile.user_id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="w-4 h-4" />
-                                    )}
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Radera användare?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Är du säker på att du vill radera "{profile.display_name || "denna användare"}"? 
-                                      Detta raderar alla deras annonser, meddelanden och all annan data. 
-                                      Detta kan inte ångras.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteUser(profile.user_id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              {/* Action buttons - shown below user info on mobile */}
+                              {profile.user_id !== user?.id && (
+                                <div className="flex items-center gap-2 mt-3">
+                                  {canSendDirectMessages && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => openDirectMessageDialog(profile)}
+                                      className="gap-1.5"
                                     >
-                                      Radera användare
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
+                                      <Mail className="w-4 h-4" />
+                                      <span className="hidden sm:inline">Meddelande</span>
+                                    </Button>
+                                  )}
+                                  {canDeleteUsers && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          disabled={deletingId === profile.user_id}
+                                          className="gap-1.5"
+                                        >
+                                          {deletingId === profile.user_id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                          ) : (
+                                            <Trash2 className="w-4 h-4" />
+                                          )}
+                                          <span className="hidden sm:inline">Radera</span>
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Radera användare?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Är du säker på att du vill radera "{profile.display_name || "denna användare"}"? 
+                                            Detta raderar alla deras annonser, meddelanden och all annan data. 
+                                            Detta kan inte ångras.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleDeleteUser(profile.user_id)}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          >
+                                            Radera användare
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
