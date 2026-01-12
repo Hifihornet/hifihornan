@@ -73,6 +73,38 @@ export type Database = {
           },
         ]
       }
+      listing_views: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          viewer_id: string | null
+          viewer_ip_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          viewer_id?: string | null
+          viewer_ip_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          viewer_id?: string | null
+          viewer_ip_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_views_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           brand: string
@@ -300,6 +332,7 @@ export type Database = {
         Args: { _content: string; _recipient_user_id: string }
         Returns: string
       }
+      cleanup_old_listing_views: { Args: never; Returns: undefined }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_profile_count: { Args: never; Returns: number }
       get_public_profile: {
@@ -347,10 +380,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_listing_view: {
-        Args: { listing_id: string }
-        Returns: undefined
-      }
+      increment_listing_view:
+        | { Args: { listing_id: string }; Returns: undefined }
+        | { Args: { listing_id: string; viewer_ip?: string }; Returns: boolean }
       is_store_account: { Args: { _user_id: string }; Returns: boolean }
       search_profiles: {
         Args: { _search_term: string }
