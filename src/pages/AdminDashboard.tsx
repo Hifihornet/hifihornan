@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   Shield, 
@@ -15,7 +15,8 @@ import {
   Megaphone,
   Mail,
   Store,
-  Plus
+  Plus,
+  MessageCircle
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -81,6 +82,25 @@ interface BroadcastMessage {
   created_at: string;
 }
 
+interface SupportConversation {
+  id: string;
+  buyer_id: string;
+  updated_at: string;
+  buyer_name?: string;
+  buyer_avatar?: string;
+  last_message?: string;
+  unread_count?: number;
+}
+
+interface SupportMessage {
+  id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  read_at: string | null;
+  is_system_message?: boolean;
+}
+
 interface AdminListing {
   id: string;
   title: string;
@@ -100,6 +120,8 @@ interface AdminProfile {
   listing_count: number;
 }
 
+const SUPPORT_LISTING_ID = "00000000-0000-0000-0000-000000000000";
+
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { isCreator, isAdmin, isModerator, isLoading: rolesLoading } = useUserRoles(user?.id);
@@ -112,6 +134,16 @@ const AdminDashboard = () => {
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   
+  // Support chat state
+  const [supportConversations, setSupportConversations] = useState<SupportConversation[]>([]);
+  const [loadingSupport, setLoadingSupport] = useState(true);
+  const [selectedSupportConv, setSelectedSupportConv] = useState<SupportConversation | null>(null);
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [loadingSupportMessages, setLoadingSupportMessages] = useState(false);
+  const [supportReply, setSupportReply] = useState("");
+  const [sendingSupportReply, setSendingSupportReply] = useState(false);
+  const supportMessagesEndRef = useRef<HTMLDivElement>(null);
+
   // Broadcast form state
   const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
   const [broadcastTitle, setBroadcastTitle] = useState("");
@@ -136,6 +168,7 @@ const AdminDashboard = () => {
   const canSendBroadcasts = isAdmin;
   const canSendDirectMessages = isAdmin;
   const canCreateStoreAccounts = isAdmin;
+  const canViewSupport = isAdmin;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -155,8 +188,45 @@ const AdminDashboard = () => {
       fetchListings();
       fetchProfiles();
       fetchBroadcasts();
+      if (canViewSupport) {
+        fetchSupportConversations();
+      }
     }
-  }, [hasAccess]);
+  }, [hasAccess, canViewSupport]);
+
+  // Scroll to bottom when support messages change
+  useEffect(() => {
+    supportMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [supportMessages]);
+
+  // Subscribe to realtime support messages
+  useEffect(() => {
+    if (!selectedSupportConv || !user) return;
+
+    const channel = supabase
+      .channel(`admin-support-${selectedSupportConv.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${selectedSupportConv.id}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as SupportMessage;
+          setSupportMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedSupportConv, user]);
 
   const fetchListings = async () => {
     setLoadingListings(true);
@@ -183,6 +253,129 @@ const AdminDashboard = () => {
       setBroadcasts(data || []);
     } catch (err) {
       console.error("Error fetching broadcasts:", err);
+    }
+  };
+
+  const fetchSupportConversations = async () => {
+    setLoadingSupport(true);
+    try {
+      // Get all support conversations (where listing_id is the special support ID)
+      const { data: conversations, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("listing_id", SUPPORT_LISTING_ID)
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Enrich with user info and last message
+      const enrichedConversations = await Promise.all(
+        (conversations || []).map(async (conv) => {
+          // Get buyer profile
+          const { data: profileData } = await supabase.rpc("get_public_profile_by_user_id", {
+            _user_id: conv.buyer_id,
+          });
+          const profile = profileData?.[0];
+
+          // Get last message
+          const { data: lastMsgData } = await supabase
+            .from("messages")
+            .select("content")
+            .eq("conversation_id", conv.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          // Get unread count
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", conv.id)
+            .neq("sender_id", user?.id || "")
+            .is("read_at", null);
+
+          return {
+            id: conv.id,
+            buyer_id: conv.buyer_id,
+            updated_at: conv.updated_at,
+            buyer_name: profile?.display_name || "Okänd användare",
+            buyer_avatar: profile?.avatar_url,
+            last_message: lastMsgData?.content,
+            unread_count: count || 0,
+          } as SupportConversation;
+        })
+      );
+
+      setSupportConversations(enrichedConversations);
+    } catch (err) {
+      console.error("Error fetching support conversations:", err);
+      toast.error("Kunde inte hämta supportärenden");
+    } finally {
+      setLoadingSupport(false);
+    }
+  };
+
+  const fetchSupportMessages = async (convId: string) => {
+    setLoadingSupportMessages(true);
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", convId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      setSupportMessages(data || []);
+
+      // Mark messages as read
+      if (user) {
+        const unreadIds = (data || [])
+          .filter((m) => m.sender_id !== user.id && !m.read_at)
+          .map((m) => m.id);
+        if (unreadIds.length > 0) {
+          await supabase
+            .from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .in("id", unreadIds);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching support messages:", err);
+    } finally {
+      setLoadingSupportMessages(false);
+    }
+  };
+
+  const handleSelectSupportConv = (conv: SupportConversation) => {
+    setSelectedSupportConv(conv);
+    fetchSupportMessages(conv.id);
+  };
+
+  const handleSendSupportReply = async () => {
+    if (!supportReply.trim() || !selectedSupportConv || !user) return;
+
+    setSendingSupportReply(true);
+    const content = supportReply.trim();
+    setSupportReply("");
+
+    try {
+      const { error } = await supabase.from("messages").insert({
+        conversation_id: selectedSupportConv.id,
+        sender_id: user.id,
+        content,
+        is_system_message: true, // Mark as system message so it shows as from HiFihörnet
+      });
+
+      if (error) throw error;
+
+      // Refresh conversations to update last message
+      fetchSupportConversations();
+    } catch (err) {
+      console.error("Error sending support reply:", err);
+      toast.error("Kunde inte skicka svar");
+      setSupportReply(content);
+    } finally {
+      setSendingSupportReply(false);
     }
   };
 
@@ -628,6 +821,17 @@ const AdminDashboard = () => {
                 <Users className="w-4 h-4" />
                 Användare
               </TabsTrigger>
+              {canViewSupport && (
+                <TabsTrigger value="support" className="gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Support
+                  {supportConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0) > 0 && (
+                    <span className="ml-1 h-5 min-w-[20px] rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center px-1.5">
+                      {supportConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Listings Tab */}
@@ -859,6 +1063,181 @@ const AdminDashboard = () => {
                 </ScrollArea>
               </div>
             </TabsContent>
+
+            {/* Support Tab */}
+            {canViewSupport && (
+              <TabsContent value="support">
+                <div className="bg-card border border-border rounded-xl">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
+                    <h2 className="font-semibold text-foreground">Supportärenden</h2>
+                    <Button variant="outline" size="sm" onClick={fetchSupportConversations} disabled={loadingSupport}>
+                      <RefreshCw className={`w-4 h-4 ${loadingSupport ? "animate-spin" : ""}`} />
+                      Uppdatera
+                    </Button>
+                  </div>
+                  
+                  <div className="flex h-[500px]">
+                    {/* Conversation list */}
+                    <div className="w-1/3 border-r border-border">
+                      <ScrollArea className="h-full">
+                        {loadingSupport ? (
+                          <div className="flex items-center justify-center py-20">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                          </div>
+                        ) : supportConversations.length === 0 ? (
+                          <div className="text-center py-20 text-muted-foreground text-sm px-4">
+                            Inga supportärenden
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-border">
+                            {supportConversations.map((conv) => (
+                              <button
+                                key={conv.id}
+                                onClick={() => handleSelectSupportConv(conv)}
+                                className={`w-full p-3 text-left hover:bg-secondary/30 transition-colors ${
+                                  selectedSupportConv?.id === conv.id ? "bg-secondary/50" : ""
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center overflow-hidden shrink-0">
+                                    {conv.buyer_avatar ? (
+                                      <img
+                                        src={conv.buyer_avatar}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <User className="w-4 h-4 text-muted-foreground" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium text-sm truncate">
+                                        {conv.buyer_name}
+                                      </span>
+                                      {(conv.unread_count || 0) > 0 && (
+                                        <span className="h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center px-1.5">
+                                          {conv.unread_count}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {conv.last_message || "Inget meddelande"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </div>
+
+                    {/* Chat area */}
+                    <div className="flex-1 flex flex-col">
+                      {selectedSupportConv ? (
+                        <>
+                          {/* Chat header */}
+                          <div className="p-3 border-b border-border flex items-center gap-2">
+                            <Link
+                              to={`/profil/${selectedSupportConv.buyer_id}`}
+                              className="font-medium text-foreground hover:text-primary"
+                            >
+                              {selectedSupportConv.buyer_name}
+                            </Link>
+                          </div>
+
+                          {/* Messages */}
+                          <ScrollArea className="flex-1 p-4">
+                            {loadingSupportMessages ? (
+                              <div className="flex items-center justify-center h-full">
+                                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                              </div>
+                            ) : supportMessages.length === 0 ? (
+                              <div className="text-center py-10 text-muted-foreground text-sm">
+                                Inga meddelanden
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {supportMessages.map((msg) => {
+                                  const isFromAdmin = msg.is_system_message || msg.sender_id === user?.id;
+                                  return (
+                                    <div
+                                      key={msg.id}
+                                      className={`flex ${isFromAdmin ? "justify-end" : "justify-start"}`}
+                                    >
+                                      <div
+                                        className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                                          isFromAdmin
+                                            ? "bg-primary text-primary-foreground rounded-br-sm"
+                                            : "bg-secondary text-foreground rounded-bl-sm"
+                                        }`}
+                                      >
+                                        <p className="text-sm whitespace-pre-wrap break-words">
+                                          {msg.content}
+                                        </p>
+                                        <p
+                                          className={`text-[10px] mt-1 ${
+                                            isFromAdmin
+                                              ? "text-primary-foreground/70"
+                                              : "text-muted-foreground"
+                                          }`}
+                                        >
+                                          {formatDistanceToNow(new Date(msg.created_at), {
+                                            addSuffix: true,
+                                            locale: sv,
+                                          })}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                <div ref={supportMessagesEndRef} />
+                              </div>
+                            )}
+                          </ScrollArea>
+
+                          {/* Reply input */}
+                          <div className="p-3 border-t border-border">
+                            <div className="flex gap-2">
+                              <Textarea
+                                value={supportReply}
+                                onChange={(e) => setSupportReply(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendSupportReply();
+                                  }
+                                }}
+                                placeholder="Skriv ett svar..."
+                                className="min-h-[44px] max-h-[100px] resize-none"
+                                rows={1}
+                              />
+                              <Button
+                                onClick={handleSendSupportReply}
+                                disabled={!supportReply.trim() || sendingSupportReply}
+                                size="icon"
+                                className="shrink-0"
+                              >
+                                {sendingSupportReply ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Send className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+                          Välj en konversation
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </main>

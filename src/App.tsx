@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CookieConsent from "@/components/CookieConsent";
 import BroadcastBanner from "@/components/BroadcastBanner";
+import SupportChat from "@/components/SupportChat";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import Index from "./pages/Index";
 import Browse from "./pages/Browse";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BroadcastBanner />
+          <SupportChat />
           <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>
