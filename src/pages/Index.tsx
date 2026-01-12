@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, Disc, Radio, Speaker, Headphones } from "lucide-react";
+import { Search, ArrowRight, Disc, Radio, Speaker, Headphones, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
@@ -42,6 +42,17 @@ const Index = () => {
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
+  });
+
+  const { data: profileCount = 0 } = useQuery({
+    queryKey: ["profile-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_profile_count");
+      
+      if (error) throw error;
+      return data || 0;
+    },
+    staleTime: 60000, // Cache for 1 minute
   });
 
   const featuredListings = listings;
@@ -91,11 +102,16 @@ const Index = () => {
 
             <div className="flex items-center gap-6 text-sm text-muted-foreground animate-fade-in-up delay-400">
               <span className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="w-2 h-2 rounded-full bg-primary" />
                 {listings.length} aktiva annonser
               </span>
               <span>•</span>
-              <span>Lägg upp annonser gratis</span>
+              <span className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                {profileCount} registrerade medlemmar
+              </span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">Lägg upp annonser gratis</span>
             </div>
           </div>
         </div>

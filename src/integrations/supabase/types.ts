@@ -207,6 +207,7 @@ export type Database = {
     }
     Functions: {
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
+      get_profile_count: { Args: never; Returns: number }
       get_public_profile: {
         Args: { _user_id: string }
         Returns: {
