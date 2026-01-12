@@ -14,8 +14,8 @@ const StoreBadge = ({ className = "", size = "sm", showLabel = false }: StoreBad
   
   if (showLabel) {
     return (
-      <div 
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500 text-white text-xs font-medium ${className}`}
+      <div
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium shadow-sm ring-1 ring-border ${className}`}
         title="Officiell butik"
       >
         <Store className="w-3 h-3" strokeWidth={2.5} />
@@ -23,10 +23,10 @@ const StoreBadge = ({ className = "", size = "sm", showLabel = false }: StoreBad
       </div>
     );
   }
-  
+
   return (
-    <div 
-      className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-white shadow-md ${sizeClasses} ${className}`}
+    <div
+      className={`absolute flex items-center justify-center rounded-full bg-accent text-accent-foreground shadow-sm ring-1 ring-border ${sizeClasses} ${className}`}
       title="Officiell butik"
     >
       <Store className={iconSize} strokeWidth={2.5} />
