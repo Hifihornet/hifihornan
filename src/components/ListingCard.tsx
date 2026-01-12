@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
 import { MapPin, Calendar, Eye } from "lucide-react";
 import { Listing, categories, conditions } from "@/data/listings";
+import StoreBadge from "./StoreBadge";
 
 interface ListingCardProps {
   listing: Listing;
+  isStoreAccount?: boolean;
 }
 
-const ListingCard = ({ listing }: ListingCardProps) => {
+const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
   const category = categories.find((c) => c.id === listing.category);
   const condition = conditions.find((c) => c.id === listing.condition);
 
@@ -23,6 +25,9 @@ const ListingCard = ({ listing }: ListingCardProps) => {
             <span className="glass px-2 py-1 rounded-md text-xs font-medium">
               {category?.icon} {category?.label}
             </span>
+            {isStoreAccount && (
+              <StoreBadge showLabel size="sm" />
+            )}
           </div>
           <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
             <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-bold">

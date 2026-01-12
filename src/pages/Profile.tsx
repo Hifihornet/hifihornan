@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import CreatorBadge from "@/components/CreatorBadge";
+import StoreBadge from "@/components/StoreBadge";
 import OnlineIndicator from "@/components/OnlineIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,7 +45,7 @@ const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { isCreator } = useUserRoles(userId);
+  const { isCreator, isStore } = useUserRoles(userId);
   const isUserOnline = useIsUserOnline(userId);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -454,6 +455,7 @@ const Profile = () => {
                   )}
                 </div>
                 {isCreator && <CreatorBadge size="md" className="-top-1 -right-1" />}
+                {isStore && !isCreator && <StoreBadge size="md" className="-bottom-0.5 -right-0.5" />}
                 {isOwnProfile && (
                   <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                     <label className="p-1.5 hover:bg-white/20 rounded-full cursor-pointer transition-colors">
@@ -505,6 +507,7 @@ const Profile = () => {
                       <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
                         {profile.display_name || "Användare"}
                       </h1>
+                      {isStore && <StoreBadge showLabel size="md" />}
                       <OnlineIndicator 
                         isOnline={isUserOnline} 
                         lastSeen={profile.last_seen}
