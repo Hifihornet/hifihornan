@@ -45,6 +45,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
 import { toast } from "sonner";
@@ -241,6 +242,31 @@ const AdminDashboard = () => {
     }
   };
 
+  const getFunctionErrorMessage = async (err: unknown) => {
+    // supabase-js throws FunctionsHttpError for non-2xx responses
+    if (err instanceof FunctionsHttpError) {
+      try {
+        const body = await err.context.json();
+        return typeof body?.error === "string" ? body.error : err.message;
+      } catch {
+        return err.message;
+      }
+    }
+
+    const anyErr = err as any;
+    // Some environments don't preserve the class prototype
+    if (anyErr?.name === "FunctionsHttpError" && anyErr?.context?.json) {
+      try {
+        const body = await anyErr.context.json();
+        return typeof body?.error === "string" ? body.error : anyErr.message;
+      } catch {
+        return anyErr?.message;
+      }
+    }
+
+    return anyErr?.message;
+  };
+
   const handleCreateStoreAccount = async () => {
     if (!storeEmail.trim() || !storePassword.trim() || !storeName.trim()) {
       toast.error("Fyll i alla fält");
@@ -271,8 +297,17 @@ const AdminDashboard = () => {
       fetchProfiles();
     } catch (err: any) {
       console.error("Error creating store account:", err);
-      if (err.message?.includes("duplicate key") || err.message?.includes("already exists")) {
+      const msg = (await getFunctionErrorMessage(err)) || "";
+      const msgLower = msg.toLowerCase();
+
+      if (msgLower.includes("already registered") || msgLower.includes("already exists") || msgLower.includes("duplicate")) {
         toast.error("E-postadressen används redan");
+      } else if (msgLower.includes("forbidden")) {
+        toast.error("Du saknar behörighet (kräver admin)");
+      } else if (msgLower.includes("failed to fetch") || msgLower.includes("network")) {
+        toast.error("Nätverksfel – prova igen");
+      } else if (msg) {
+        toast.error(msg);
       } else {
         toast.error("Kunde inte skapa butikskonto");
       }
