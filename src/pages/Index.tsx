@@ -38,6 +38,8 @@ const Index = () => {
         createdAt: item.created_at,
       }));
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const featuredListings = listings;
