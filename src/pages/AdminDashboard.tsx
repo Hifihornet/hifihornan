@@ -10,11 +10,15 @@ import {
   RefreshCw,
   User,
   Calendar,
-  Eye
+  Eye,
+  Send,
+  Megaphone
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -28,12 +32,47 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
+
+interface AdminListing {
+  id: string;
+  title: string;
+  user_id: string;
+  status: string;
+  created_at: string;
+  seller_name: string;
+}
+
+interface AdminProfile {
+  id: string;
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  last_seen: string | null;
+  listing_count: number;
+}
+
+interface BroadcastMessage {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+}
 
 interface AdminListing {
   id: string;
@@ -61,12 +100,20 @@ const AdminDashboard = () => {
   
   const [listings, setListings] = useState<AdminListing[]>([]);
   const [profiles, setProfiles] = useState<AdminProfile[]>([]);
+  const [broadcasts, setBroadcasts] = useState<BroadcastMessage[]>([]);
   const [loadingListings, setLoadingListings] = useState(true);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  
+  // Broadcast form state
+  const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastContent, setBroadcastContent] = useState("");
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
 
   const hasAccess = isCreator || isAdmin || isModerator;
   const canDeleteUsers = isAdmin;
+  const canSendBroadcasts = isAdmin;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -85,6 +132,7 @@ const AdminDashboard = () => {
     if (hasAccess) {
       fetchListings();
       fetchProfiles();
+      fetchBroadcasts();
     }
   }, [hasAccess]);
 
@@ -99,6 +147,47 @@ const AdminDashboard = () => {
       toast.error("Kunde inte hämta annonser");
     } finally {
       setLoadingListings(false);
+    }
+  };
+
+  const fetchBroadcasts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("broadcast_messages")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      setBroadcasts(data || []);
+    } catch (err) {
+      console.error("Error fetching broadcasts:", err);
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!broadcastTitle.trim() || !broadcastContent.trim()) {
+      toast.error("Fyll i både titel och meddelande");
+      return;
+    }
+
+    setSendingBroadcast(true);
+    try {
+      const { error } = await supabase.rpc("admin_send_broadcast", {
+        _title: broadcastTitle.trim(),
+        _content: broadcastContent.trim(),
+      });
+      if (error) throw error;
+      
+      toast.success(`Meddelande skickat till alla ${profiles.length} användare`);
+      setBroadcastDialogOpen(false);
+      setBroadcastTitle("");
+      setBroadcastContent("");
+      fetchBroadcasts();
+    } catch (err) {
+      console.error("Error sending broadcast:", err);
+      toast.error("Kunde inte skicka meddelande");
+    } finally {
+      setSendingBroadcast(false);
     }
   };
 
@@ -225,6 +314,100 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
+
+          {/* Admin Actions */}
+          {canSendBroadcasts && (
+            <div className="mb-8">
+              <Dialog open={broadcastDialogOpen} onOpenChange={setBroadcastDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="glow" className="gap-2">
+                    <Megaphone className="w-4 h-4" />
+                    Skicka meddelande till alla
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Skicka meddelande till alla användare</DialogTitle>
+                    <DialogDescription>
+                      Detta meddelande kommer att visas för alla {profiles.length} registrerade användare.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">
+                        Titel
+                      </label>
+                      <Input
+                        value={broadcastTitle}
+                        onChange={(e) => setBroadcastTitle(e.target.value)}
+                        placeholder="T.ex. Viktigt meddelande"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">
+                        Meddelande
+                      </label>
+                      <Textarea
+                        value={broadcastContent}
+                        onChange={(e) => setBroadcastContent(e.target.value)}
+                        placeholder="Skriv ditt meddelande här..."
+                        rows={5}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setBroadcastDialogOpen(false)}
+                      disabled={sendingBroadcast}
+                    >
+                      Avbryt
+                    </Button>
+                    <Button
+                      variant="glow"
+                      onClick={handleSendBroadcast}
+                      disabled={sendingBroadcast || !broadcastTitle.trim() || !broadcastContent.trim()}
+                    >
+                      {sendingBroadcast ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                      Skicka
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+
+          {/* Recent Broadcasts */}
+          {canSendBroadcasts && broadcasts.length > 0 && (
+            <div className="mb-8 p-4 rounded-xl bg-card border border-border">
+              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Megaphone className="w-4 h-4" />
+                Senaste utskick
+              </h3>
+              <div className="space-y-2">
+                {broadcasts.slice(0, 3).map((broadcast) => (
+                  <div key={broadcast.id} className="p-3 rounded-lg bg-secondary/30">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm">{broadcast.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(broadcast.created_at), {
+                          addSuffix: true,
+                          locale: sv,
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-1">
+                      {broadcast.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <Tabs defaultValue="listings" className="space-y-6">
