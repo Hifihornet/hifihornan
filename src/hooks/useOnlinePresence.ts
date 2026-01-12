@@ -42,22 +42,32 @@ export const useOnlinePresence = () => {
 // Hook for checking if specific users are online
 export const useOnlineUsers = (userIds: string[]) => {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [observerKey] = useState(
+    () => `observer-${Math.random().toString(36).slice(2)}`
+  );
 
   useEffect(() => {
     if (userIds.length === 0) return;
 
-    const channel = supabase.channel(PRESENCE_CHANNEL);
+    // Presence requires a key even for observers
+    const channel = supabase.channel(PRESENCE_CHANNEL, {
+      config: {
+        presence: {
+          key: observerKey,
+        },
+      },
+    });
 
     const handleSync = () => {
       const state = channel.presenceState<OnlineUser>();
       const online = new Set<string>();
-      
+
       Object.keys(state).forEach((key) => {
         if (userIds.includes(key)) {
           online.add(key);
         }
       });
-      
+
       setOnlineUsers(online);
     };
 
@@ -65,17 +75,21 @@ export const useOnlineUsers = (userIds: string[]) => {
       .on("presence", { event: "sync" }, handleSync)
       .on("presence", { event: "join" }, handleSync)
       .on("presence", { event: "leave" }, handleSync)
-      .subscribe((status) => {
+      .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          // Initial check
-          handleSync();
+          // Ensure we're part of the presence set so we receive updates reliably
+          await channel.track({
+            id: observerKey,
+            online_at: new Date().toISOString(),
+          });
+          setTimeout(handleSync, 0);
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userIds.join(",")]);
+  }, [observerKey, userIds.join(",")]);
 
   const isOnline = useCallback(
     (userId: string) => onlineUsers.has(userId),
@@ -88,11 +102,20 @@ export const useOnlineUsers = (userIds: string[]) => {
 // Hook for checking if a single user is online
 export const useIsUserOnline = (userId: string | undefined) => {
   const [isOnline, setIsOnline] = useState(false);
+  const [observerKey] = useState(
+    () => `observer-${Math.random().toString(36).slice(2)}`
+  );
 
   useEffect(() => {
     if (!userId) return;
 
-    const channel = supabase.channel(PRESENCE_CHANNEL);
+    const channel = supabase.channel(PRESENCE_CHANNEL, {
+      config: {
+        presence: {
+          key: observerKey,
+        },
+      },
+    });
 
     const handleSync = () => {
       const state = channel.presenceState<OnlineUser>();
@@ -103,16 +126,20 @@ export const useIsUserOnline = (userId: string | undefined) => {
       .on("presence", { event: "sync" }, handleSync)
       .on("presence", { event: "join" }, handleSync)
       .on("presence", { event: "leave" }, handleSync)
-      .subscribe((status) => {
+      .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          handleSync();
+          await channel.track({
+            id: observerKey,
+            online_at: new Date().toISOString(),
+          });
+          setTimeout(handleSync, 0);
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [observerKey, userId]);
 
   return isOnline;
 };

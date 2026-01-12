@@ -25,17 +25,17 @@ const OnlineIndicator = ({
         className={cn(
           "rounded-full shrink-0",
           sizeClasses[size],
-          isOnline 
-            ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" 
-            : "bg-muted-foreground/40"
+          isOnline ? "bg-primary shadow-sm" : "bg-muted-foreground/40"
         )}
         title={isOnline ? "Online" : "Offline"}
       />
       {showLabel && (
-        <span className={cn(
-          "text-sm",
-          isOnline ? "text-green-500" : "text-muted-foreground"
-        )}>
+        <span
+          className={cn(
+            "text-sm",
+            isOnline ? "text-foreground" : "text-muted-foreground"
+          )}
+        >
           {isOnline ? "Online" : "Offline"}
         </span>
       )}
