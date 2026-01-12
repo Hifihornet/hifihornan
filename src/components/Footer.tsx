@@ -69,10 +69,18 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-border mt-8 pt-8 text-center">
+        <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Hifihörnan. Alla rättigheter förbehållna.
           </p>
+          <div className="flex gap-4 text-sm">
+            <Link to="/integritetspolicy" className="text-muted-foreground hover:text-primary transition-colors">
+              Integritetspolicy
+            </Link>
+            <Link to="/cookies" className="text-muted-foreground hover:text-primary transition-colors">
+              Cookies
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
