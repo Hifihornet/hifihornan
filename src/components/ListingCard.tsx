@@ -21,9 +21,10 @@ const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
   const condition = conditions.find((c) => c.id === listing.condition);
   
   const listingUrl = `${window.location.origin}/listing/${listing.id}`;
-  // OG-enabled URL for social sharing (shows proper preview)
-  const ogShareUrl = `https://jzgnzpxznabzowlzcpat.supabase.co/functions/v1/og-image?id=${listing.id}`;
-  const encodedUrl = encodeURIComponent(ogShareUrl);
+
+  // För sociala medier behöver vi en server-renderad OG-sida.
+  const previewUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-image?id=${listing.id}`;
+  const encodedUrl = encodeURIComponent(previewUrl);
   const encodedTitle = encodeURIComponent(listing.title);
 
   const handleCardClick = () => {
@@ -33,8 +34,18 @@ const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
   const copyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
+      await navigator.clipboard.writeText(previewUrl);
+      toast.success("Förhandsvisningslänk kopierad!");
+    } catch {
+      toast.error("Kunde inte kopiera länken");
+    }
+  };
+
+  const copyPlainLink = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
       await navigator.clipboard.writeText(listingUrl);
-      toast.success("Länken kopierad!");
+      toast.success("Vanlig länk kopierad!");
     } catch {
       toast.error("Kunde inte kopiera länken");
     }
@@ -105,7 +116,11 @@ const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={copyLink}>
                 <LinkIcon className="w-4 h-4 mr-2" />
-                Kopiera länk
+                Kopiera länk (förhandsvisning)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={copyPlainLink}>
+                <LinkIcon className="w-4 h-4 mr-2" />
+                Kopiera vanlig länk
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
