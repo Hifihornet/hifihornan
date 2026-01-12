@@ -1,22 +1,20 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, Save, Edit2, AlertTriangle, MessageCircle } from "lucide-react";
+import { useParams, Link } from "react-router-dom";
+import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, MessageCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import CreatorBadge from "@/components/CreatorBadge";
 import StoreBadge from "@/components/StoreBadge";
 import OnlineIndicator from "@/components/OnlineIndicator";
+import ProfileSettingsDialog from "@/components/ProfileSettingsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
 import { useIsUserOnline } from "@/hooks/useOnlinePresence";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -47,27 +45,19 @@ interface Profile {
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { isCreator, isStore } = useUserRoles(userId);
   const isUserOnline = useIsUserOnline(userId);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editBio, setEditBio] = useState("");
-  const [editDisplayName, setEditDisplayName] = useState("");
-  const [editLocation, setEditLocation] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [deletingAccount, setDeletingAccount] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [showMessageInput, setShowMessageInput] = useState(false);
   const [canSendDirectMessage, setCanSendDirectMessage] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isTargetAdmin, setIsTargetAdmin] = useState(false);
 
   const isOwnProfile = user?.id === userId;
 
@@ -77,8 +67,6 @@ const Profile = () => {
     try {
       let profileData;
       
-      // If viewing own profile, fetch full profile data
-      // Otherwise, use public_profiles view to hide sensitive fields (phone, location for non-owners)
       if (user?.id === userId) {
         const { data, error: profileError } = await supabase
           .from("profiles")
@@ -89,7 +77,6 @@ const Profile = () => {
         if (profileError) throw profileError;
         profileData = data;
       } else {
-        // Use secure function for other users (excludes phone, location)
         const { data, error: profileError } = await supabase
           .rpc('get_public_profile_by_user_id', { _user_id: userId });
 
@@ -104,9 +91,6 @@ const Profile = () => {
       }
 
       setProfile(profileData);
-      setEditBio(profileData.bio || "");
-      setEditDisplayName(profileData.display_name || "");
-      setEditLocation(profileData.location || "");
 
       // Check if we can send direct messages to this user
       if (user && user.id !== userId) {
@@ -115,7 +99,7 @@ const Profile = () => {
         });
         if (prefs && prefs.length > 0) {
           setCanSendDirectMessage(prefs[0].allow_direct_messages && !prefs[0].is_admin);
-          setIsAdmin(prefs[0].is_admin);
+          setIsTargetAdmin(prefs[0].is_admin);
         }
       }
 
@@ -151,7 +135,7 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, user?.id]);
 
   useEffect(() => {
     fetchProfileAndListings();
@@ -172,73 +156,6 @@ const Profile = () => {
     } catch (err) {
       console.error("Error deleting listing:", err);
       toast.error("Kunde inte ta bort annonsen");
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    if (!user) return;
-    setSavingProfile(true);
-
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          display_name: editDisplayName || null,
-          location: editLocation || null,
-          bio: editBio || null,
-        })
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      setProfile(prev => prev ? {
-        ...prev,
-        display_name: editDisplayName || null,
-        location: editLocation || null,
-        bio: editBio || null,
-      } : null);
-      
-      setIsEditing(false);
-      toast.success("Profilen har uppdaterats");
-    } catch (err) {
-      console.error("Error saving profile:", err);
-      toast.error("Kunde inte spara profilen");
-    } finally {
-      setSavingProfile(false);
-    }
-  };
-
-  const handleToggleSearchable = async (checked: boolean) => {
-    if (!user) return;
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_searchable: checked })
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-      setProfile(prev => prev ? { ...prev, is_searchable: checked } : null);
-      toast.success(checked ? "Du syns nu i profilsökningen" : "Du är nu dold från profilsökningen");
-    } catch (err) {
-      console.error("Error updating searchable:", err);
-      toast.error("Kunde inte uppdatera inställningen");
-    }
-  };
-
-  const handleToggleDirectMessages = async (checked: boolean) => {
-    if (!user) return;
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ allow_direct_messages: checked })
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-      setProfile(prev => prev ? { ...prev, allow_direct_messages: checked } : null);
-      toast.success(checked ? "Du kan nu ta emot direktmeddelanden" : "Du tar inte längre emot direktmeddelanden");
-    } catch (err) {
-      console.error("Error updating direct messages:", err);
-      toast.error("Kunde inte uppdatera inställningen");
     }
   };
 
@@ -271,83 +188,6 @@ const Profile = () => {
       toast.error("Kunde inte skicka meddelandet");
     } finally {
       setSendingMessage(false);
-    }
-  };
-
-  const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0] || !user) return;
-    
-    const file = e.target.files[0];
-    if (!file.type.startsWith("image/")) {
-      toast.error("Endast bilder är tillåtna");
-      return;
-    }
-
-    setUploadingAvatar(true);
-
-    try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
-
-      // Delete old avatar if exists
-      if (profile?.avatar_url) {
-        const oldPath = profile.avatar_url.split("/avatars/")[1];
-        if (oldPath) {
-          await supabase.storage.from("avatars").remove([oldPath]);
-        }
-      }
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
-
-      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("user_id", user.id);
-
-      if (updateError) throw updateError;
-
-      setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
-      toast.success("Profilbilden har uppdaterats");
-    } catch (err) {
-      console.error("Error uploading avatar:", err);
-      toast.error("Kunde inte ladda upp profilbilden");
-    } finally {
-      setUploadingAvatar(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleDeleteAvatar = async () => {
-    if (!user || !profile?.avatar_url) return;
-
-    try {
-      const oldPath = profile.avatar_url.split("/avatars/")[1]?.split("?")[0];
-      if (oldPath) {
-        await supabase.storage.from("avatars").remove([oldPath]);
-      }
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({ avatar_url: null })
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      setProfile(prev => prev ? { ...prev, avatar_url: null } : null);
-      toast.success("Profilbilden har tagits bort");
-    } catch (err) {
-      console.error("Error deleting avatar:", err);
-      toast.error("Kunde inte ta bort profilbilden");
     }
   };
 
@@ -423,64 +263,8 @@ const Profile = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!user) return;
-
-    setDeletingAccount(true);
-
-    try {
-      // Delete all user's files from storage buckets
-      // Avatar
-      if (profile?.avatar_url) {
-        const avatarPath = profile.avatar_url.split("/avatars/")[1];
-        if (avatarPath) {
-          await supabase.storage.from("avatars").remove([avatarPath]);
-        }
-      }
-
-      // Setup images
-      if (profile?.setup_images && profile.setup_images.length > 0) {
-        const setupPaths = profile.setup_images
-          .map(url => url.split("/setup-images/")[1])
-          .filter(Boolean);
-        if (setupPaths.length > 0) {
-          await supabase.storage.from("setup-images").remove(setupPaths);
-        }
-      }
-
-      // Listing images
-      const { data: userListings } = await supabase
-        .from("listings")
-        .select("images")
-        .eq("user_id", user.id);
-
-      if (userListings) {
-        const listingImagePaths = userListings
-          .flatMap(l => l.images || [])
-          .map(url => url.split("/listing-images/")[1])
-          .filter(Boolean);
-        if (listingImagePaths.length > 0) {
-          await supabase.storage.from("listing-images").remove(listingImagePaths);
-        }
-      }
-
-      // Call the database function to delete account
-      const { error } = await supabase.rpc("delete_user_account", {
-        _user_id: user.id,
-      });
-
-      if (error) throw error;
-
-      // Sign out and redirect
-      await signOut();
-      toast.success("Ditt konto har raderats");
-      navigate("/");
-    } catch (err) {
-      console.error("Error deleting account:", err);
-      toast.error("Kunde inte radera kontot. Försök igen senare.");
-    } finally {
-      setDeletingAccount(false);
-    }
+  const handleProfileUpdate = (updatedProfile: Profile) => {
+    setProfile(updatedProfile);
   };
 
   if (loading) {
@@ -528,7 +312,7 @@ const Profile = () => {
           {/* Profile Header */}
           <div className="bg-card border border-border rounded-xl p-6 md:p-8 mb-8">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div className="relative group">
+              <div className="relative">
                 <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden">
                   {profile.avatar_url ? (
                     <img 
@@ -542,117 +326,50 @@ const Profile = () => {
                 </div>
                 {isCreator && <CreatorBadge size="md" className="-top-1 -right-1" />}
                 {isStore && !isCreator && <StoreBadge size="md" className="-bottom-0.5 -right-0.5" />}
-                {isOwnProfile && (
-                  <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <label className="p-1.5 hover:bg-white/20 rounded-full cursor-pointer transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleUploadAvatar}
-                        className="hidden"
-                        disabled={uploadingAvatar}
-                      />
-                      {uploadingAvatar ? (
-                        <Loader2 className="w-5 h-5 text-white animate-spin" />
-                      ) : (
-                        <Upload className="w-5 h-5 text-white" />
-                      )}
-                    </label>
-                    {profile.avatar_url && (
-                      <button
-                        onClick={handleDeleteAvatar}
-                        className="p-1.5 hover:bg-white/20 rounded-full cursor-pointer transition-colors"
-                        title="Ta bort profilbild"
-                      >
-                        <Trash2 className="w-5 h-5 text-white" />
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
               
               <div className="flex-1">
-                {isEditing ? (
-                  <div className="space-y-3">
-                    <Input
-                      value={editDisplayName}
-                      onChange={(e) => setEditDisplayName(e.target.value)}
-                      placeholder="Ditt namn"
-                      className="max-w-xs"
-                    />
-                    <Input
-                      value={editLocation}
-                      onChange={(e) => setEditLocation(e.target.value)}
-                      placeholder="Ort"
-                      className="max-w-xs"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-                        {profile.display_name || "Användare"}
-                      </h1>
-                      {isStore && <StoreBadge showLabel size="md" />}
-                      <OnlineIndicator 
-                        isOnline={isUserOnline} 
-                        lastSeen={profile.last_seen}
-                        size="md" 
-                        showLabel 
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      {profile.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {profile.location}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        Medlem sedan {memberSince}
-                      </span>
-                    </div>
-                  </>
-                )}
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+                    {profile.display_name || "Användare"}
+                  </h1>
+                  {isStore && <StoreBadge showLabel size="md" />}
+                  <OnlineIndicator 
+                    isOnline={isUserOnline} 
+                    lastSeen={profile.last_seen}
+                    size="md" 
+                    showLabel 
+                  />
+                </div>
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  {profile.location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {profile.location}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    Medlem sedan {memberSince}
+                  </span>
+                </div>
               </div>
 
               <div className="flex gap-2">
+                {/* Settings button for own profile */}
                 {isOwnProfile && (
-                  <>
-                    {isEditing ? (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setIsEditing(false)}
-                          disabled={savingProfile}
-                        >
-                          Avbryt
-                        </Button>
-                        <Button 
-                          variant="glow" 
-                          onClick={handleSaveProfile}
-                          disabled={savingProfile}
-                        >
-                          {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                          Spara
-                        </Button>
-                      </>
-                    ) : (
-                      <Button variant="outline" onClick={() => setIsEditing(true)}>
-                        <Edit2 className="w-4 h-4" />
-                        Redigera profil
-                      </Button>
-                    )}
-                  </>
+                  <ProfileSettingsDialog 
+                    profile={profile} 
+                    onProfileUpdate={handleProfileUpdate} 
+                  />
                 )}
-                {isOwnProfile && !isEditing && (
+                {isOwnProfile && (
                   <Link to="/create">
                     <Button variant="glow">Lägg upp ny annons</Button>
                   </Link>
                 )}
                 {/* Send Direct Message Button - only show on other users' profiles */}
-                {!isOwnProfile && user && !isAdmin && canSendDirectMessage && (
+                {!isOwnProfile && user && !isTargetAdmin && canSendDirectMessage && (
                   <Button
                     variant="outline"
                     onClick={() => setShowMessageInput(true)}
@@ -775,19 +492,12 @@ const Profile = () => {
                     Om {isOwnProfile ? "mig" : profile.display_name || "användaren"}
                   </h2>
                   
-                  {isEditing ? (
-                    <Textarea
-                      value={editBio}
-                      onChange={(e) => setEditBio(e.target.value)}
-                      placeholder="Berätta lite om dig själv och ditt intresse för HiFi..."
-                      rows={6}
-                    />
-                  ) : profile.bio ? (
+                  {profile.bio ? (
                     <p className="text-foreground/80 whitespace-pre-line">{profile.bio}</p>
                   ) : (
                     <p className="text-muted-foreground italic">
                       {isOwnProfile 
-                        ? "Du har inte skrivit något om dig själv än. Klicka på 'Redigera profil' för att lägga till."
+                        ? "Du har inte skrivit något om dig själv än. Klicka på kugghjulet för att lägga till."
                         : "Ingen beskrivning tillagd."}
                     </p>
                   )}
@@ -848,123 +558,6 @@ const Profile = () => {
               </div>
             </TabsContent>
           </Tabs>
-
-          {/* Privacy Settings Section - Only for own profile */}
-          {isOwnProfile && (
-            <div className="mt-8">
-              <div className="bg-card border border-border rounded-xl p-6">
-                <h2 className="font-display text-xl font-semibold mb-6">
-                  Sekretessinställningar
-                </h2>
-                
-                <div className="space-y-6">
-                  {/* Searchability Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="searchable" className="text-base">
-                        Visa i profilsökning
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Låt andra användare hitta dig via profilsökningen
-                      </p>
-                    </div>
-                    <Switch
-                      id="searchable"
-                      checked={profile.is_searchable ?? false}
-                      onCheckedChange={handleToggleSearchable}
-                    />
-                  </div>
-
-                  {/* Direct Messages Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="direct-messages" className="text-base">
-                        Ta emot direktmeddelanden
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Låt andra användare skicka meddelanden direkt till dig
-                      </p>
-                    </div>
-                    <Switch
-                      id="direct-messages"
-                      checked={profile.allow_direct_messages ?? true}
-                      onCheckedChange={handleToggleDirectMessages}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Account Section */}
-          {isOwnProfile && (
-            <div className="mt-12 pt-8 border-t border-destructive/20">
-              <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-destructive/10 rounded-full">
-                    <AlertTriangle className="w-6 h-6 text-destructive" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-destructive mb-2">
-                      Radera konto
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Denna åtgärd är permanent och kan inte ångras. All din data kommer att raderas, 
-                      inklusive profil, annonser, meddelanden och uppladdade bilder.
-                    </p>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={deletingAccount}>
-                          {deletingAccount ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Raderar...
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Radera mitt konto
-                            </>
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-                            <AlertTriangle className="w-5 h-5" />
-                            Är du säker?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription className="space-y-2">
-                            <p>
-                              Du är på väg att permanent radera ditt konto. Detta inkluderar:
-                            </p>
-                            <ul className="list-disc list-inside text-sm space-y-1">
-                              <li>Din profil och all profilinformation</li>
-                              <li>Alla dina annonser</li>
-                              <li>Alla dina meddelanden och konversationer</li>
-                              <li>Alla uppladdade bilder</li>
-                            </ul>
-                            <p className="font-medium text-destructive">
-                              Denna åtgärd kan inte ångras!
-                            </p>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleDeleteAccount}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Ja, radera mitt konto
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </main>
 

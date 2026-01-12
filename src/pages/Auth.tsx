@@ -4,9 +4,12 @@ import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -29,6 +32,10 @@ const Auth = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptedCookies, setAcceptedCookies] = useState(false);
+  
+  // New privacy options
+  const [isSearchable, setIsSearchable] = useState(false);
+  const [allowDirectMessages, setAllowDirectMessages] = useState(true);
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -77,7 +84,7 @@ const Auth = () => {
           navigate("/");
         }
       } else {
-        const { error } = await signUp(email, password, displayName);
+        const { error, data } = await signUp(email, password, displayName);
         if (error) {
           if (error.message.includes("already registered")) {
             toast.error("E-postadressen är redan registrerad");
@@ -85,6 +92,16 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
+          // Update privacy preferences after signup
+          if (data?.user) {
+            await supabase
+              .from("profiles")
+              .update({
+                is_searchable: isSearchable,
+                allow_direct_messages: allowDirectMessages,
+              })
+              .eq("user_id", data.user.id);
+          }
           toast.success("Konto skapat! Du är nu inloggad.");
           navigate("/");
         }
@@ -172,47 +189,83 @@ const Auth = () => {
               </div>
 
               {!isLogin && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-start space-x-3">
-                    <Checkbox
-                      id="terms"
-                      checked={acceptedTerms}
-                      onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                    />
-                    <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
-                      Jag har läst och godkänner{" "}
-                      <Link to="/anvandarvillkor" target="_blank" className="text-primary hover:underline">
-                        användarvillkoren
-                      </Link>
-                    </label>
+                <div className="space-y-4 pt-2">
+                  {/* Privacy Options */}
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+                    <p className="text-sm font-medium text-foreground">Sekretessinställningar</p>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="searchable" className="text-sm">Visa i profilsökning</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Låt andra hitta dig via sökningen
+                        </p>
+                      </div>
+                      <Switch
+                        id="searchable"
+                        checked={isSearchable}
+                        onCheckedChange={setIsSearchable}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="direct-messages" className="text-sm">Ta emot direktmeddelanden</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Låt andra skicka meddelanden till dig
+                        </p>
+                      </div>
+                      <Switch
+                        id="direct-messages"
+                        checked={allowDirectMessages}
+                        onCheckedChange={setAllowDirectMessages}
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex items-start space-x-3">
-                    <Checkbox
-                      id="privacy"
-                      checked={acceptedPrivacy}
-                      onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
-                    />
-                    <label htmlFor="privacy" className="text-sm text-muted-foreground leading-tight cursor-pointer">
-                      Jag har läst och godkänner{" "}
-                      <Link to="/integritetspolicy" target="_blank" className="text-primary hover:underline">
-                        integritetspolicyn
-                      </Link>
-                    </label>
-                  </div>
+                  {/* Terms and Policies */}
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="terms"
+                        checked={acceptedTerms}
+                        onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                      />
+                      <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                        Jag har läst och godkänner{" "}
+                        <Link to="/anvandarvillkor" target="_blank" className="text-primary hover:underline">
+                          användarvillkoren
+                        </Link>
+                      </label>
+                    </div>
 
-                  <div className="flex items-start space-x-3">
-                    <Checkbox
-                      id="cookies"
-                      checked={acceptedCookies}
-                      onCheckedChange={(checked) => setAcceptedCookies(checked === true)}
-                    />
-                    <label htmlFor="cookies" className="text-sm text-muted-foreground leading-tight cursor-pointer">
-                      Jag har läst och godkänner{" "}
-                      <Link to="/cookies" target="_blank" className="text-primary hover:underline">
-                        cookiepolicyn
-                      </Link>
-                    </label>
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="privacy"
+                        checked={acceptedPrivacy}
+                        onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                      />
+                      <label htmlFor="privacy" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                        Jag har läst och godkänner{" "}
+                        <Link to="/integritetspolicy" target="_blank" className="text-primary hover:underline">
+                          integritetspolicyn
+                        </Link>
+                      </label>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="cookies"
+                        checked={acceptedCookies}
+                        onCheckedChange={(checked) => setAcceptedCookies(checked === true)}
+                      />
+                      <label htmlFor="cookies" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                        Jag har läst och godkänner{" "}
+                        <Link to="/cookies" target="_blank" className="text-primary hover:underline">
+                          cookiepolicyn
+                        </Link>
+                      </label>
+                    </div>
                   </div>
                 </div>
               )}
@@ -243,6 +296,8 @@ const Auth = () => {
                   setAcceptedTerms(false);
                   setAcceptedPrivacy(false);
                   setAcceptedCookies(false);
+                  setIsSearchable(false);
+                  setAllowDirectMessages(true);
                 }}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
