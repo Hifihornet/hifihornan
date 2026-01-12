@@ -20,6 +20,7 @@ export interface Listing {
   sellerPhone?: string;
   images: string[];
   createdAt: string;
+  viewCount?: number;
 }
 
 export const categories = [

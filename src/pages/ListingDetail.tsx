@@ -46,10 +46,16 @@ const ListingDetail = () => {
             location,
             images,
             created_at,
-            user_id
+            user_id,
+            view_count
           `)
           .eq("id", id)
           .single();
+        
+        // Increment view count
+        if (data && id) {
+          supabase.rpc('increment_listing_view', { listing_id: id });
+        }
 
         if (error) {
           console.error("Error fetching listing:", error);
