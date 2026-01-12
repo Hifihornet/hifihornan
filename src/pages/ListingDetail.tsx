@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 const ListingDetail = () => {
   const { id } = useParams();
   const [listing, setListing] = useState<Listing | null>(null);
+  const [sellerId, setSellerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showContact, setShowContact] = useState(false);
   const [message, setMessage] = useState("");
@@ -54,6 +55,9 @@ const ListingDetail = () => {
         if (error) {
           console.error("Error fetching listing:", error);
         } else if (data) {
+          // Store seller ID for profile link
+          setSellerId(data.user_id);
+          
           // Use secure function to get seller display name
           let sellerDisplayName = "Säljare";
           if (data.user_id) {
@@ -76,7 +80,7 @@ const ListingDetail = () => {
             location: data.location,
             sellerName: sellerDisplayName,
             sellerEmail: "",
-            sellerPhone: undefined, // Phone is no longer exposed publicly
+            sellerPhone: undefined,
             images: data.images || [],
             createdAt: data.created_at,
           });
@@ -274,15 +278,20 @@ const ListingDetail = () => {
 
                 {/* Seller Info */}
                 <div className="mt-6 pt-6 border-t border-border">
-                  <div className="flex items-center gap-3">
+                  <Link 
+                    to={sellerId ? `/profil/${sellerId}` : "#"}
+                    className="flex items-center gap-3 group"
+                  >
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                       <User className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <div className="font-medium text-foreground">{listing.sellerName}</div>
-                      <div className="text-sm text-muted-foreground">Säljare</div>
+                      <div className="font-medium text-foreground group-hover:text-primary transition-colors">
+                        {listing.sellerName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Visa profil →</div>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               </div>
 

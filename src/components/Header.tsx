@@ -72,6 +72,12 @@ const Header = () => {
                       {user.email}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to={`/profil/${user.id}`} className="cursor-pointer">
+                        <User className="w-4 h-4 mr-2" />
+                        Min profil
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Logga ut
@@ -123,6 +129,12 @@ const Header = () => {
               <div className="px-4 pt-2 space-y-2">
                 {user ? (
                   <>
+                    <Link to={`/profil/${user.id}`} onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        <User className="w-4 h-4" />
+                        Min profil
+                      </Button>
+                    </Link>
                     <Link to="/create" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="glow" className="w-full">
                         <Plus className="w-4 h-4" />
