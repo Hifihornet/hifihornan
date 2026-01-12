@@ -18,23 +18,35 @@ const ShareButtons = ({ title, url, listingId }: ShareButtonsProps) => {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   
-  // Use OG-enabled URL for social sharing if we have a listingId
-  const shareUrl = listingId 
-    ? `https://jzgnzpxznabzowlzcpat.supabase.co/functions/v1/og-image?id=${listingId}`
-    : (url || window.location.href);
-  
-  // Regular URL for copying
-  const copyUrl = url || window.location.href;
+  const canonicalUrl = url || window.location.href;
+
+  // Sociala medier läser OG-taggar från server-renderad HTML.
+  // Eftersom /listing/:id är en SPA-route behöver vi en "förhandsvisningslänk".
+  const previewUrl = listingId
+    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-image?id=${listingId}`
+    : canonicalUrl;
+
+  // Använd previewUrl för delning så att titel + bild blir rätt.
+  const shareUrl = previewUrl;
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedTitle = encodeURIComponent(title);
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(copyUrl);
+      await navigator.clipboard.writeText(previewUrl);
       setCopied(true);
-      toast.success("Länken kopierad!");
+      toast.success("Förhandsvisningslänk kopierad!");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
+      toast.error("Kunde inte kopiera länken");
+    }
+  };
+
+  const handleCopyPlainLink = async () => {
+    try {
+      await navigator.clipboard.writeText(canonicalUrl);
+      toast.success("Vanlig länk kopierad!");
+    } catch {
       toast.error("Kunde inte kopiera länken");
     }
   };
@@ -151,22 +163,31 @@ const ShareButtons = ({ title, url, listingId }: ShareButtonsProps) => {
 
           <div className="my-1 border-t border-border" />
 
-          {/* Copy Link */}
+          {/* Copy Link (preview) */}
           <button
             onClick={handleCopyLink}
             className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-left"
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-green-500" />
+                <Check className="w-4 h-4 text-primary" />
                 Kopierad!
               </>
             ) : (
               <>
                 <Link className="w-4 h-4" />
-                Kopiera länk
+                Kopiera länk (förhandsvisning)
               </>
             )}
+          </button>
+
+          {/* Copy regular link */}
+          <button
+            onClick={handleCopyPlainLink}
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-left"
+          >
+            <Link className="w-4 h-4" />
+            Kopiera vanlig länk
           </button>
         </div>
       </PopoverContent>
