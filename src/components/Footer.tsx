@@ -12,8 +12,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
               <img src={logo} alt="Hifihörnan" className="h-12 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
-              Marknadsplatsen för vintage HiFi-entusiaster. Köp och sälj klassisk 
-              ljudutrustning direkt mellan privatpersoner.
+              Marknadsplatsen för HiFi-entusiaster. Köp och sälj HiFi-utrustning direkt mellan privatpersoner.
             </p>
           </div>
 

@@ -182,7 +182,7 @@ const Index = () => {
               Har du HiFi att sälja?
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Lägg upp din klassiska ljudutrustning gratis och nå tusentals entusiaster 
+              Lägg upp din ljudutrustning gratis och nå andra entusiaster 
               som letar efter precis det du har.
             </p>
             <Link to="/create">
