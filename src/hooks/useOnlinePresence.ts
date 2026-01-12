@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -8,10 +8,12 @@ interface OnlineUser {
 }
 
 const PRESENCE_CHANNEL = "online-users";
+const LAST_SEEN_UPDATE_INTERVAL = 60000; // Update last_seen every 60 seconds
 
 // Hook for tracking current user's presence
 export const useOnlinePresence = () => {
   const { user } = useAuth();
+  const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -24,16 +26,29 @@ export const useOnlinePresence = () => {
       },
     });
 
+    // Update last_seen in database
+    const updateLastSeen = async () => {
+      await supabase.rpc("update_user_last_seen", { _user_id: user.id });
+    };
+
     presenceChannel.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
         await presenceChannel.track({
           id: user.id,
           online_at: new Date().toISOString(),
         });
+        // Update last_seen immediately on connect
+        updateLastSeen();
       }
     });
 
+    // Periodically update last_seen while online
+    intervalRef.current = window.setInterval(updateLastSeen, LAST_SEEN_UPDATE_INTERVAL);
+
     return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
       presenceChannel.unsubscribe();
     };
   }, [user]);

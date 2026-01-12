@@ -37,6 +37,7 @@ interface Profile {
   setup_images: string[] | null;
   avatar_url: string | null;
   created_at: string;
+  last_seen: string | null;
 }
 
 const Profile = () => {
@@ -71,7 +72,7 @@ const Profile = () => {
       if (user?.id === userId) {
         const { data, error: profileError } = await supabase
           .from("profiles")
-          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at")
+          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at, last_seen")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -504,7 +505,12 @@ const Profile = () => {
                       <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
                         {profile.display_name || "Användare"}
                       </h1>
-                      <OnlineIndicator isOnline={isUserOnline} size="md" showLabel />
+                      <OnlineIndicator 
+                        isOnline={isUserOnline} 
+                        lastSeen={profile.last_seen}
+                        size="md" 
+                        showLabel 
+                      />
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       {profile.location && (
