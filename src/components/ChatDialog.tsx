@@ -61,7 +61,7 @@ const ChatDialog = ({
 
   // Subscribe to realtime messages
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !user) return;
 
     const channel = supabase
       .channel(`messages-${conversationId}`)
@@ -73,12 +73,20 @@ const ChatDialog = ({
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
+        async (payload) => {
           const newMsg = payload.new as Message;
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
+          
+          // Mark message as read if it's from the other user and chat is open
+          if (newMsg.sender_id !== user.id && !newMsg.read_at) {
+            await supabase
+              .from("messages")
+              .update({ read_at: new Date().toISOString() })
+              .eq("id", newMsg.id);
+          }
         }
       )
       .subscribe();
@@ -86,7 +94,7 @@ const ChatDialog = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, user]);
 
   const fetchOrCreateConversation = async () => {
     if (!user) return;
@@ -149,6 +157,18 @@ const ChatDialog = ({
         console.error("Error fetching messages:", msgsError);
       } else {
         setMessages(msgs || []);
+        
+        // Mark unread messages from other user as read
+        const unreadMessages = (msgs || []).filter(
+          (m) => m.sender_id !== user.id && !m.read_at
+        );
+        
+        if (unreadMessages.length > 0) {
+          await supabase
+            .from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .in("id", unreadMessages.map((m) => m.id));
+        }
       }
     } catch (error) {
       console.error("Error:", error);
