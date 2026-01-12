@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Music2 } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Footer = () => {
   return (
@@ -8,12 +8,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Music2 className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-display font-bold text-xl text-foreground">
-                Hifihörnan
-              </span>
+              <img src={logo} alt="Hifihörnan" className="h-12 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
               Marknadsplatsen för vintage HiFi-entusiaster. Köp och sälj klassisk 
