@@ -75,7 +75,27 @@ const PrivacyPolicy = () => {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">6. Kontakt</h2>
+            <h2 className="text-2xl font-semibold">6. Radering av konto</h2>
+            <p className="text-foreground/80">
+              Du har möjlighet att när som helst radera ditt konto via din profilsida. När du väljer att 
+              radera ditt konto sker följande:
+            </p>
+            <ul className="list-disc pl-6 text-foreground/80 space-y-2">
+              <li><strong>Permanent radering:</strong> All din data raderas permanent från våra system</li>
+              <li><strong>Profil:</strong> Din profilinformation inklusive namn, ort och biografi raderas</li>
+              <li><strong>Annonser:</strong> Alla dina publicerade annonser tas bort</li>
+              <li><strong>Meddelanden:</strong> Alla dina meddelanden och konversationer raderas</li>
+              <li><strong>Bilder:</strong> Alla uppladdade bilder (profilbild, setup-bilder, annonsbilder) raderas från våra servrar</li>
+            </ul>
+            <p className="text-foreground/80 mt-4">
+              <strong>Viktigt:</strong> Efter att ditt konto har raderats har vi ingen tillgång till din 
+              information längre och kan inte återställa några uppgifter. Raderingen är permanent och 
+              kan inte ångras.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-2xl font-semibold">7. Kontakt</h2>
             <p className="text-foreground/80">
               Om du har frågor om denna integritetspolicy eller vill utöva dina rättigheter, 
               kontakta oss via e-post.
