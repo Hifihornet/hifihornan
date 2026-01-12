@@ -50,8 +50,22 @@ const ProfileSearchDialog = ({ trigger }: ProfileSearchDialogProps) => {
     }
   }, [open]);
 
-  const handleSearch = async () => {
+  // Live search with debounce
+  useEffect(() => {
     if (!searchTerm.trim()) {
+      setResults([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleSearch(searchTerm.trim());
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, user?.id]);
+
+  const handleSearch = async (term: string) => {
+    if (!term) {
       setResults([]);
       return;
     }
@@ -59,7 +73,7 @@ const ProfileSearchDialog = ({ trigger }: ProfileSearchDialogProps) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc("search_profiles", {
-        _search_term: searchTerm.trim(),
+        _search_term: term,
       });
 
       if (error) throw error;
@@ -146,20 +160,17 @@ const ProfileSearchDialog = ({ trigger }: ProfileSearchDialogProps) => {
           <DialogTitle>Sök profiler</DialogTitle>
         </DialogHeader>
 
-        <div className="flex gap-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Sök på namn eller ort..."
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            placeholder="Börja skriva för att söka..."
+            className="pl-10 pr-10"
           />
-          <Button onClick={handleSearch} disabled={loading}>
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-          </Button>
+          {loading && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+          )}
         </div>
 
         <ScrollArea className="max-h-[400px]">
