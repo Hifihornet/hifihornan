@@ -16,6 +16,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/anvandarvillkor" element={<TermsOfService />} />
             <Route path="/profil/:userId" element={<Profile />} />
             <Route path="/meddelanden" element={<Messages />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
