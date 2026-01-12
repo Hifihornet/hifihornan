@@ -220,6 +220,30 @@ const Profile = () => {
     }
   };
 
+  const handleDeleteAvatar = async () => {
+    if (!user || !profile?.avatar_url) return;
+
+    try {
+      const oldPath = profile.avatar_url.split("/avatars/")[1]?.split("?")[0];
+      if (oldPath) {
+        await supabase.storage.from("avatars").remove([oldPath]);
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, avatar_url: null } : null);
+      toast.success("Profilbilden har tagits bort");
+    } catch (err) {
+      console.error("Error deleting avatar:", err);
+      toast.error("Kunde inte ta bort profilbilden");
+    }
+  };
+
   const handleUploadSetupImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !user) return;
     
@@ -351,20 +375,31 @@ const Profile = () => {
                 </div>
                 {isCreator && <CreatorBadge size="md" className="-top-1 -right-1" />}
                 {isOwnProfile && (
-                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleUploadAvatar}
-                      className="hidden"
-                      disabled={uploadingAvatar}
-                    />
-                    {uploadingAvatar ? (
-                      <Loader2 className="w-6 h-6 text-white animate-spin" />
-                    ) : (
-                      <Upload className="w-6 h-6 text-white" />
+                  <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label className="p-1.5 hover:bg-white/20 rounded-full cursor-pointer transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadAvatar}
+                        className="hidden"
+                        disabled={uploadingAvatar}
+                      />
+                      {uploadingAvatar ? (
+                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                      ) : (
+                        <Upload className="w-5 h-5 text-white" />
+                      )}
+                    </label>
+                    {profile.avatar_url && (
+                      <button
+                        onClick={handleDeleteAvatar}
+                        className="p-1.5 hover:bg-white/20 rounded-full cursor-pointer transition-colors"
+                        title="Ta bort profilbild"
+                      >
+                        <Trash2 className="w-5 h-5 text-white" />
+                      </button>
                     )}
-                  </label>
+                  </div>
                 )}
               </div>
               
