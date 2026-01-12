@@ -324,6 +324,7 @@ export type Database = {
         Args: { listing_id: string }
         Returns: undefined
       }
+      is_store_account: { Args: { _user_id: string }; Returns: boolean }
       update_user_last_seen: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {

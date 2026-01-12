@@ -11,12 +11,17 @@ import AdBanner from "@/components/AdBanner";
 import { conditions, Listing } from "@/data/listings";
 import { supabase } from "@/integrations/supabase/client";
 
+interface ListingWithStore extends Listing {
+  userId?: string;
+  isStore?: boolean;
+}
+
 const Browse = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [dbListings, setDbListings] = useState<Listing[]>([]);
+  const [dbListings, setDbListings] = useState<ListingWithStore[]>([]);
   const [loading, setLoading] = useState(true);
 
   const selectedCategory = searchParams.get("category");
@@ -34,7 +39,16 @@ const Browse = () => {
         if (error) {
           console.error("Error fetching listings:", error);
         } else if (data) {
-          const formattedListings: Listing[] = data.map((item) => ({
+          // Check which sellers are store accounts
+          const uniqueUserIds = [...new Set(data.map(item => item.user_id))];
+          const storeStatusMap: Record<string, boolean> = {};
+          
+          for (const userId of uniqueUserIds) {
+            const { data: isStore } = await supabase.rpc('is_store_account', { _user_id: userId });
+            storeStatusMap[userId] = isStore || false;
+          }
+
+          const formattedListings: ListingWithStore[] = data.map((item) => ({
             id: item.id,
             title: item.title,
             description: item.description,
@@ -49,6 +63,8 @@ const Browse = () => {
             images: item.images || [],
             createdAt: item.created_at,
             viewCount: item.view_count,
+            userId: item.user_id,
+            isStore: storeStatusMap[item.user_id] || false,
           }));
           setDbListings(formattedListings);
         }
@@ -197,7 +213,7 @@ const Browse = () => {
           ) : filteredListings.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
+                <ListingCard key={listing.id} listing={listing} isStoreAccount={listing.isStore} />
               ))}
             </div>
           ) : (

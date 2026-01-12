@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import ChatDialog from "@/components/ChatDialog";
+import StoreBadge from "@/components/StoreBadge";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -17,6 +18,7 @@ const ListingDetail = () => {
   const { user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [sellerId, setSellerId] = useState<string | null>(null);
+  const [isStoreAccount, setIsStoreAccount] = useState(false);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -64,6 +66,10 @@ const ListingDetail = () => {
 
           // Store seller ID for profile link
           setSellerId(data.user_id);
+          
+          // Check if seller is a store account
+          const { data: storeCheck } = await supabase.rpc('is_store_account', { _user_id: data.user_id });
+          setIsStoreAccount(storeCheck || false);
           
           // Use secure function to get seller display name
           let sellerDisplayName = "Säljare";
@@ -291,12 +297,20 @@ const ListingDetail = () => {
                     to={sellerId ? `/profil/${sellerId}` : "#"}
                     className="flex items-center gap-3 group"
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                       <User className="w-6 h-6 text-primary-foreground" />
+                      {isStoreAccount && (
+                        <StoreBadge className="-bottom-0.5 -right-0.5" size="sm" />
+                      )}
                     </div>
                     <div>
-                      <div className="font-medium text-foreground group-hover:text-primary transition-colors">
-                        {listing.sellerName}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                          {listing.sellerName}
+                        </span>
+                        {isStoreAccount && (
+                          <StoreBadge showLabel size="sm" />
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">Visa profil →</div>
                     </div>
