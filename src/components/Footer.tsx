@@ -84,6 +84,9 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
             © {new Date().getFullYear()} Hifihörnan. Alla rättigheter förbehållna.
           </p>
           <div className="flex gap-4 text-sm">
+            <Link to="/anvandarvillkor" className="text-muted-foreground hover:text-primary transition-colors">
+              Användarvillkor
+            </Link>
             <Link to="/integritetspolicy" className="text-muted-foreground hover:text-primary transition-colors">
               Integritetspolicy
             </Link>
