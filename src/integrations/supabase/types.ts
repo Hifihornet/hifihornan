@@ -265,6 +265,19 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_get_all_profiles_with_roles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          id: string
+          last_seen: string
+          listing_count: number
+          roles: string[]
+          user_id: string
+        }[]
+      }
       admin_send_broadcast: {
         Args: { _content: string; _title: string }
         Returns: string
