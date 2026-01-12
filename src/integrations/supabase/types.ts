@@ -203,6 +203,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_public_profile: {
         Args: { _user_id: string }
         Returns: {

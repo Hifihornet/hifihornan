@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
-import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, Save, Edit2 } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, Save, Edit2, AlertTriangle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
@@ -39,7 +39,8 @@ interface Profile {
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const { isCreator } = useUserRoles(userId);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -52,6 +53,7 @@ const Profile = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const isOwnProfile = user?.id === userId;
 
@@ -327,6 +329,66 @@ const Profile = () => {
     } catch (err) {
       console.error("Error deleting image:", err);
       toast.error("Kunde inte ta bort bilden");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    setDeletingAccount(true);
+
+    try {
+      // Delete all user's files from storage buckets
+      // Avatar
+      if (profile?.avatar_url) {
+        const avatarPath = profile.avatar_url.split("/avatars/")[1];
+        if (avatarPath) {
+          await supabase.storage.from("avatars").remove([avatarPath]);
+        }
+      }
+
+      // Setup images
+      if (profile?.setup_images && profile.setup_images.length > 0) {
+        const setupPaths = profile.setup_images
+          .map(url => url.split("/setup-images/")[1])
+          .filter(Boolean);
+        if (setupPaths.length > 0) {
+          await supabase.storage.from("setup-images").remove(setupPaths);
+        }
+      }
+
+      // Listing images
+      const { data: userListings } = await supabase
+        .from("listings")
+        .select("images")
+        .eq("user_id", user.id);
+
+      if (userListings) {
+        const listingImagePaths = userListings
+          .flatMap(l => l.images || [])
+          .map(url => url.split("/listing-images/")[1])
+          .filter(Boolean);
+        if (listingImagePaths.length > 0) {
+          await supabase.storage.from("listing-images").remove(listingImagePaths);
+        }
+      }
+
+      // Call the database function to delete account
+      const { error } = await supabase.rpc("delete_user_account", {
+        _user_id: user.id,
+      });
+
+      if (error) throw error;
+
+      // Sign out and redirect
+      await signOut();
+      toast.success("Ditt konto har raderats");
+      navigate("/");
+    } catch (err) {
+      console.error("Error deleting account:", err);
+      toast.error("Kunde inte radera kontot. Försök igen senare.");
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -640,6 +702,76 @@ const Profile = () => {
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Delete Account Section */}
+          {isOwnProfile && (
+            <div className="mt-12 pt-8 border-t border-destructive/20">
+              <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-destructive/10 rounded-full">
+                    <AlertTriangle className="w-6 h-6 text-destructive" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-destructive mb-2">
+                      Radera konto
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Denna åtgärd är permanent och kan inte ångras. All din data kommer att raderas, 
+                      inklusive profil, annonser, meddelanden och uppladdade bilder.
+                    </p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={deletingAccount}>
+                          {deletingAccount ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Raderar...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Radera mitt konto
+                            </>
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="w-5 h-5" />
+                            Är du säker?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="space-y-2">
+                            <p>
+                              Du är på väg att permanent radera ditt konto. Detta inkluderar:
+                            </p>
+                            <ul className="list-disc list-inside text-sm space-y-1">
+                              <li>Din profil och all profilinformation</li>
+                              <li>Alla dina annonser</li>
+                              <li>Alla dina meddelanden och konversationer</li>
+                              <li>Alla uppladdade bilder</li>
+                            </ul>
+                            <p className="font-medium text-destructive">
+                              Denna åtgärd kan inte ångras!
+                            </p>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDeleteAccount}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Ja, radera mitt konto
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
