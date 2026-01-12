@@ -12,7 +12,7 @@ const Footer = () => {
                 <Music2 className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="font-display font-bold text-xl text-foreground">
-                VintageHiFi
+                Hifihörnan
               </span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
@@ -71,7 +71,7 @@ const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} VintageHiFi. Alla rättigheter förbehållna.
+            © {new Date().getFullYear()} Hifihörnan. Alla rättigheter förbehållna.
           </p>
         </div>
       </div>
