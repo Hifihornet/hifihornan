@@ -167,11 +167,13 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allow_direct_messages: boolean
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          is_searchable: boolean
           last_seen: string | null
           location: string | null
           phone: string | null
@@ -180,11 +182,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          allow_direct_messages?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_searchable?: boolean
           last_seen?: string | null
           location?: string | null
           phone?: string | null
@@ -193,11 +197,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          allow_direct_messages?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_searchable?: boolean
           last_seen?: string | null
           location?: string | null
           phone?: string | null
@@ -322,6 +328,13 @@ export type Database = {
         }[]
       }
       get_seller_display_name: { Args: { _user_id: string }; Returns: string }
+      get_user_messaging_preferences: {
+        Args: { _user_id: string }
+        Returns: {
+          allow_direct_messages: boolean
+          is_admin: boolean
+        }[]
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
@@ -339,6 +352,22 @@ export type Database = {
         Returns: undefined
       }
       is_store_account: { Args: { _user_id: string }; Returns: boolean }
+      search_profiles: {
+        Args: { _search_term: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          display_name: string
+          id: string
+          last_seen: string
+          location: string
+          user_id: string
+        }[]
+      }
+      send_direct_message_to_user: {
+        Args: { _content: string; _recipient_user_id: string }
+        Returns: string
+      }
       update_user_last_seen: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {

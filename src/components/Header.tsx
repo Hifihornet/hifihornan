@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Plus, User, LogOut, MessageCircle, Shield } from "lucide-react";
+import { Menu, X, Plus, User, LogOut, MessageCircle, Shield, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
 import useUnreadMessages from "@/hooks/useUnreadMessages";
 import CreatorBadge from "@/components/CreatorBadge";
+import ProfileSearchDialog from "@/components/ProfileSearchDialog";
 import logo from "@/assets/logo.png";
 import {
   DropdownMenu,
@@ -102,6 +103,16 @@ const Header = () => {
                         )}
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <ProfileSearchDialog
+                        trigger={
+                          <button className="w-full flex items-center cursor-pointer px-2 py-1.5 text-sm">
+                            <Search className="w-4 h-4 mr-2" />
+                            Sök profiler
+                          </button>
+                        }
+                      />
+                    </DropdownMenuItem>
                     {hasAdminAccess && (
                       <>
                         <DropdownMenuSeparator />
@@ -187,6 +198,14 @@ const Header = () => {
                         )}
                       </Button>
                     </Link>
+                    <ProfileSearchDialog
+                      trigger={
+                        <Button variant="outline" className="w-full justify-start">
+                          <Search className="w-4 h-4" />
+                          Sök profiler
+                        </Button>
+                      }
+                    />
                     <Link to="/create" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="glow" className="w-full">
                         <Plus className="w-4 h-4" />

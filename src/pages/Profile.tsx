@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, Save, Edit2, AlertTriangle } from "lucide-react";
+import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, Save, Edit2, AlertTriangle, MessageCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -39,6 +41,8 @@ interface Profile {
   avatar_url: string | null;
   created_at: string;
   last_seen: string | null;
+  is_searchable?: boolean;
+  allow_direct_messages?: boolean;
 }
 
 const Profile = () => {
@@ -59,6 +63,11 @@ const Profile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [messageContent, setMessageContent] = useState("");
+  const [showMessageInput, setShowMessageInput] = useState(false);
+  const [canSendDirectMessage, setCanSendDirectMessage] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const isOwnProfile = user?.id === userId;
 
@@ -73,7 +82,7 @@ const Profile = () => {
       if (user?.id === userId) {
         const { data, error: profileError } = await supabase
           .from("profiles")
-          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at, last_seen")
+          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at, last_seen, is_searchable, allow_direct_messages")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -98,6 +107,17 @@ const Profile = () => {
       setEditBio(profileData.bio || "");
       setEditDisplayName(profileData.display_name || "");
       setEditLocation(profileData.location || "");
+
+      // Check if we can send direct messages to this user
+      if (user && user.id !== userId) {
+        const { data: prefs } = await supabase.rpc("get_user_messaging_preferences", {
+          _user_id: userId,
+        });
+        if (prefs && prefs.length > 0) {
+          setCanSendDirectMessage(prefs[0].allow_direct_messages && !prefs[0].is_admin);
+          setIsAdmin(prefs[0].is_admin);
+        }
+      }
 
       const { data: listingsData, error: listingsError } = await supabase
         .from("listings")
@@ -185,6 +205,72 @@ const Profile = () => {
       toast.error("Kunde inte spara profilen");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleToggleSearchable = async (checked: boolean) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_searchable: checked })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      setProfile(prev => prev ? { ...prev, is_searchable: checked } : null);
+      toast.success(checked ? "Du syns nu i profilsökningen" : "Du är nu dold från profilsökningen");
+    } catch (err) {
+      console.error("Error updating searchable:", err);
+      toast.error("Kunde inte uppdatera inställningen");
+    }
+  };
+
+  const handleToggleDirectMessages = async (checked: boolean) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ allow_direct_messages: checked })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      setProfile(prev => prev ? { ...prev, allow_direct_messages: checked } : null);
+      toast.success(checked ? "Du kan nu ta emot direktmeddelanden" : "Du tar inte längre emot direktmeddelanden");
+    } catch (err) {
+      console.error("Error updating direct messages:", err);
+      toast.error("Kunde inte uppdatera inställningen");
+    }
+  };
+
+  const handleSendDirectMessage = async () => {
+    if (!user || !userId || !messageContent.trim()) return;
+
+    setSendingMessage(true);
+    try {
+      const { error } = await supabase.rpc("send_direct_message_to_user", {
+        _recipient_user_id: userId,
+        _content: messageContent.trim(),
+      });
+
+      if (error) {
+        if (error.message.includes("does not accept direct messages")) {
+          toast.error("Denna användare tar inte emot direktmeddelanden");
+        } else if (error.message.includes("administrators")) {
+          toast.error("Det går inte att skicka direktmeddelanden till administratörer");
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      toast.success("Meddelandet har skickats!");
+      setMessageContent("");
+      setShowMessageInput(false);
+    } catch (err) {
+      console.error("Error sending message:", err);
+      toast.error("Kunde inte skicka meddelandet");
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -565,8 +651,53 @@ const Profile = () => {
                     <Button variant="glow">Lägg upp ny annons</Button>
                   </Link>
                 )}
+                {/* Send Direct Message Button - only show on other users' profiles */}
+                {!isOwnProfile && user && !isAdmin && canSendDirectMessage && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowMessageInput(true)}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Skicka meddelande
+                  </Button>
+                )}
               </div>
             </div>
+
+            {/* Direct Message Input */}
+            {showMessageInput && !isOwnProfile && (
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg border border-border">
+                <div className="space-y-3">
+                  <Input
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
+                    placeholder="Skriv ditt meddelande..."
+                    onKeyDown={(e) => e.key === "Enter" && handleSendDirectMessage()}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSendDirectMessage}
+                      disabled={sendingMessage || !messageContent.trim()}
+                    >
+                      {sendingMessage ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Skicka"
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowMessageInput(false);
+                        setMessageContent("");
+                      }}
+                    >
+                      Avbryt
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tabs */}
@@ -717,6 +848,53 @@ const Profile = () => {
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Privacy Settings Section - Only for own profile */}
+          {isOwnProfile && (
+            <div className="mt-8">
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h2 className="font-display text-xl font-semibold mb-6">
+                  Sekretessinställningar
+                </h2>
+                
+                <div className="space-y-6">
+                  {/* Searchability Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="searchable" className="text-base">
+                        Visa i profilsökning
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Låt andra användare hitta dig via profilsökningen
+                      </p>
+                    </div>
+                    <Switch
+                      id="searchable"
+                      checked={profile.is_searchable ?? false}
+                      onCheckedChange={handleToggleSearchable}
+                    />
+                  </div>
+
+                  {/* Direct Messages Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="direct-messages" className="text-base">
+                        Ta emot direktmeddelanden
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Låt andra användare skicka meddelanden direkt till dig
+                      </p>
+                    </div>
+                    <Switch
+                      id="direct-messages"
+                      checked={profile.allow_direct_messages ?? true}
+                      onCheckedChange={handleToggleDirectMessages}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Delete Account Section */}
           {isOwnProfile && (
