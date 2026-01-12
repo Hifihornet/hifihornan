@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Plus, User, LogOut } from "lucide-react";
+import { Menu, X, Plus, User, LogOut, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
 import CreatorBadge from "@/components/CreatorBadge";
@@ -82,6 +82,13 @@ const Header = () => {
                         Min profil
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/meddelanden" className="cursor-pointer">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Meddelanden
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Logga ut
@@ -140,6 +147,12 @@ const Header = () => {
                           {isCreator && <CreatorBadge className="-top-1.5 -right-1.5" />}
                         </span>
                         Min profil
+                      </Button>
+                    </Link>
+                    <Link to="/meddelanden" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full justify-start">
+                        <MessageCircle className="w-4 h-4" />
+                        Meddelanden
                       </Button>
                     </Link>
                     <Link to="/create" onClick={() => setIsMenuOpen(false)}>
