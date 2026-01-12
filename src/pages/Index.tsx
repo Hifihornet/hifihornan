@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, Disc, Radio, Speaker, Headphones, Users } from "lucide-react";
+import { Search, ArrowRight, Disc, Radio, Speaker, Headphones, Users, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
@@ -10,8 +10,11 @@ import { categories } from "@/data/listings";
 import heroImage from "@/assets/hero-hifi.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useActiveVisitors } from "@/hooks/useActiveVisitors";
 
 const Index = () => {
+  const activeVisitors = useActiveVisitors();
+  
   const { data: listings = [] } = useQuery({
     queryKey: ["featured-listings"],
     queryFn: async () => {
@@ -100,18 +103,25 @@ const Index = () => {
               </Link>
             </div>
 
-            <div className="flex items-center gap-6 text-sm text-muted-foreground animate-fade-in-up delay-400">
+            <div className="flex items-center gap-4 md:gap-6 text-sm text-muted-foreground animate-fade-in-up delay-400 flex-wrap">
               <span className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 {listings.length} aktiva annonser
               </span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 {profileCount} registrerade medlemmar
               </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="hidden sm:inline">Lägg upp annonser gratis</span>
+              {activeVisitors > 0 && (
+                <>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-green-500" />
+                    <span className="text-green-500 font-medium">{activeVisitors}</span> inne just nu
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
