@@ -180,7 +180,7 @@ const ListingDetail = () => {
             </Link>
             
             {listing && (
-              <ShareButtons title={listing.title} />
+              <ShareButtons title={listing.title} listingId={id} />
             )}
           </div>
 

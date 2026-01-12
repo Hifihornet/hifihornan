@@ -11,19 +11,26 @@ import { toast } from "sonner";
 interface ShareButtonsProps {
   title: string;
   url?: string;
+  listingId?: string;
 }
 
-const ShareButtons = ({ title, url }: ShareButtonsProps) => {
+const ShareButtons = ({ title, url, listingId }: ShareButtonsProps) => {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   
-  const shareUrl = url || window.location.href;
+  // Use OG-enabled URL for social sharing if we have a listingId
+  const shareUrl = listingId 
+    ? `https://jzgnzpxznabzowlzcpat.supabase.co/functions/v1/og-image?id=${listingId}`
+    : (url || window.location.href);
+  
+  // Regular URL for copying
+  const copyUrl = url || window.location.href;
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedTitle = encodeURIComponent(title);
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(copyUrl);
       setCopied(true);
       toast.success("Länken kopierad!");
       setTimeout(() => setCopied(false), 2000);
