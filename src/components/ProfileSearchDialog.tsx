@@ -78,12 +78,14 @@ const ProfileSearchDialog = ({ trigger }: ProfileSearchDialogProps) => {
 
       if (error) throw error;
       
-      // Filter out own profile from results
-      const filteredData = (data || []).filter(
-        (profile: SearchProfile) => profile.user_id !== user?.id
-      );
+      // Sort results: own profile last, others first
+      const sortedData = (data || []).sort((a: SearchProfile, b: SearchProfile) => {
+        if (a.user_id === user?.id) return 1;
+        if (b.user_id === user?.id) return -1;
+        return 0;
+      });
       
-      setResults(filteredData);
+      setResults(sortedData);
     } catch (err) {
       console.error("Error searching profiles:", err);
       toast.error("Kunde inte söka efter profiler");
@@ -213,6 +215,11 @@ const ProfileSearchDialog = ({ trigger }: ProfileSearchDialogProps) => {
                           <span className="font-medium text-foreground hover:text-primary transition-colors">
                             {profile.display_name || "Användare"}
                           </span>
+                          {profile.user_id === user?.id && (
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              Din profil
+                            </span>
+                          )}
                           <OnlineIndicator
                             isOnline={isOnline(profile.last_seen)}
                             lastSeen={profile.last_seen}
@@ -272,7 +279,7 @@ const ProfileSearchDialog = ({ trigger }: ProfileSearchDialogProps) => {
                           </div>
                         </div>
                       ) : (
-                        user && (
+                        user && profile.user_id !== user?.id && (
                           <Button
                             size="sm"
                             variant="outline"
