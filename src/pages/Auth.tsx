@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,9 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [acceptedCookies, setAcceptedCookies] = useState(false);
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -167,12 +171,58 @@ const Auth = () => {
                 )}
               </div>
 
+              {!isLogin && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                    />
+                    <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                      Jag har läst och godkänner{" "}
+                      <Link to="/anvandarvillkor" target="_blank" className="text-primary hover:underline">
+                        användarvillkoren
+                      </Link>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="privacy"
+                      checked={acceptedPrivacy}
+                      onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
+                    />
+                    <label htmlFor="privacy" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                      Jag har läst och godkänner{" "}
+                      <Link to="/integritetspolicy" target="_blank" className="text-primary hover:underline">
+                        integritetspolicyn
+                      </Link>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="cookies"
+                      checked={acceptedCookies}
+                      onCheckedChange={(checked) => setAcceptedCookies(checked === true)}
+                    />
+                    <label htmlFor="cookies" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                      Jag har läst och godkänner{" "}
+                      <Link to="/cookies" target="_blank" className="text-primary hover:underline">
+                        cookiepolicyn
+                      </Link>
+                    </label>
+                  </div>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 variant="glow"
                 size="lg"
                 className="w-full"
-                disabled={loading}
+                disabled={loading || (!isLogin && (!acceptedTerms || !acceptedPrivacy || !acceptedCookies))}
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -190,6 +240,9 @@ const Auth = () => {
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setErrors({});
+                  setAcceptedTerms(false);
+                  setAcceptedPrivacy(false);
+                  setAcceptedCookies(false);
                 }}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
