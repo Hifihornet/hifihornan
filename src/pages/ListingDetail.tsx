@@ -51,14 +51,15 @@ const ListingDetail = () => {
           `)
           .eq("id", id)
           .single();
-        
-        // Increment view count
-        if (data && id) {
-          supabase.rpc('increment_listing_view', { listing_id: id });
-        }
 
         if (error) {
           console.error("Error fetching listing:", error);
+        } else if (data) {
+          // Increment view count
+          const { error: rpcError } = await supabase.rpc('increment_listing_view', { listing_id: id });
+          if (rpcError) {
+            console.error("Error incrementing view count:", rpcError);
+          }
         } else if (data) {
           // Store seller ID for profile link
           setSellerId(data.user_id);
