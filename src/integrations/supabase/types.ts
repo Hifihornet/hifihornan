@@ -233,6 +233,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_store_account: {
+        Args: { _email: string; _password: string; _store_name: string }
+        Returns: string
+      }
       admin_delete_listing: {
         Args: { _listing_id: string }
         Returns: undefined
@@ -323,7 +327,7 @@ export type Database = {
       update_user_last_seen: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "creator" | "admin" | "moderator"
+      app_role: "creator" | "admin" | "moderator" | "store"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -451,7 +455,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["creator", "admin", "moderator"],
+      app_role: ["creator", "admin", "moderator", "store"],
     },
   },
 } as const
