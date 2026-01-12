@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Plus, User, LogOut, MessageCircle } from "lucide-react";
+import { Menu, X, Plus, User, LogOut, MessageCircle, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
 import useUnreadMessages from "@/hooks/useUnreadMessages";
@@ -20,8 +20,10 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { isCreator } = useUserRoles(user?.id);
+  const { isCreator, isAdmin, isModerator } = useUserRoles(user?.id);
   const unreadCount = useUnreadMessages();
+
+  const hasAdminAccess = isCreator || isAdmin || isModerator;
 
   const navLinks = [
     { href: "/", label: "Hem" },
@@ -100,6 +102,17 @@ const Header = () => {
                         )}
                       </Link>
                     </DropdownMenuItem>
+                    {hasAdminAccess && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="cursor-pointer">
+                            <Shield className="w-4 h-4 mr-2" />
+                            Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
@@ -180,6 +193,14 @@ const Header = () => {
                         Lägg upp annons
                       </Button>
                     </Link>
+                    {hasAdminAccess && (
+                      <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full justify-start">
+                          <Shield className="w-4 h-4" />
+                          Admin Dashboard
+                        </Button>
+                      </Link>
+                    )}
                     <Button 
                       variant="outline" 
                       className="w-full"

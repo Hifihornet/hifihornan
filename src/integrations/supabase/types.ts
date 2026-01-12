@@ -206,6 +206,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_listing: {
+        Args: { _listing_id: string }
+        Returns: undefined
+      }
+      admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
+      admin_get_all_listings: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          seller_name: string
+          status: string
+          title: string
+          user_id: string
+        }[]
+      }
+      admin_get_all_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          id: string
+          last_seen: string
+          listing_count: number
+          user_id: string
+        }[]
+      }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_profile_count: { Args: never; Returns: number }
       get_public_profile: {
