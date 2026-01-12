@@ -16,7 +16,7 @@ const PrivacyPolicy = () => {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold">1. Inledning</h2>
             <p className="text-foreground/80">
-              Hifihörnan värnar om din personliga integritet. Denna integritetspolicy förklarar hur vi samlar in, 
+              Hifihörnet värnar om din personliga integritet. Denna integritetspolicy förklarar hur vi samlar in, 
               använder och skyddar dina personuppgifter när du använder vår webbplats.
             </p>
           </section>

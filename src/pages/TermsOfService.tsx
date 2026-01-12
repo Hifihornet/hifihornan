@@ -16,7 +16,7 @@ const TermsOfService = () => {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold">1. Inledning</h2>
             <p className="text-foreground/80">
-              Välkommen till Hifihörnan. Genom att använda vår webbplats accepterar du dessa användarvillkor. 
+              Välkommen till Hifihörnet. Genom att använda vår webbplats accepterar du dessa användarvillkor. 
               Läs igenom dem noggrant innan du börjar använda tjänsten.
             </p>
           </section>
@@ -24,7 +24,7 @@ const TermsOfService = () => {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold">2. Om tjänsten</h2>
             <p className="text-foreground/80">
-              Hifihörnan är en marknadsplats som möjliggör för privatpersoner att köpa och sälja 
+              Hifihörnet är en marknadsplats som möjliggör för privatpersoner att köpa och sälja 
               vintage HiFi-utrustning. Vi tillhandahåller endast en plattform för att underlätta 
               kontakten mellan köpare och säljare.
             </p>
@@ -37,7 +37,7 @@ const TermsOfService = () => {
               <div>
                 <h3 className="text-xl font-medium mb-2">3.1 Användarens ansvar</h3>
                 <p className="text-foreground/80">
-                  Som användare av Hifihörnan ansvarar du fullt ut för:
+                  Som användare av Hifihörnet ansvarar du fullt ut för:
                 </p>
                 <ul className="list-disc pl-6 text-foreground/80 space-y-2 mt-2">
                   <li>Innehållet i dina annonser, inklusive beskrivningar, bilder och prissättning</li>
@@ -49,9 +49,9 @@ const TermsOfService = () => {
               </div>
 
               <div>
-                <h3 className="text-xl font-medium mb-2">3.2 Hifihörnans roll</h3>
+                <h3 className="text-xl font-medium mb-2">3.2 Hifihörnets roll</h3>
                 <p className="text-foreground/80">
-                  <strong>Viktigt att förstå:</strong> Hifihörnan är inte part i någon affär som sker mellan 
+                  <strong>Viktigt att förstå:</strong> Hifihörnet är inte part i någon affär som sker mellan 
                   användare. Vi förmedlar endast kontakt mellan köpare och säljare och tar inget ansvar för:
                 </p>
                 <ul className="list-disc pl-6 text-foreground/80 space-y-2 mt-2">
@@ -66,7 +66,7 @@ const TermsOfService = () => {
               <div>
                 <h3 className="text-xl font-medium mb-2">3.3 Förbjudet innehåll</h3>
                 <p className="text-foreground/80">
-                  Följande är inte tillåtet på Hifihörnan:
+                  Följande är inte tillåtet på Hifihörnet:
                 </p>
                 <ul className="list-disc pl-6 text-foreground/80 space-y-2 mt-2">
                   <li>Annonser för stulna produkter</li>
