@@ -60,7 +60,7 @@ const ListingDetail = () => {
           if (rpcError) {
             console.error("Error incrementing view count:", rpcError);
           }
-        } else if (data) {
+
           // Store seller ID for profile link
           setSellerId(data.user_id);
           
