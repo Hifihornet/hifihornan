@@ -254,10 +254,12 @@ const AdminDashboard = () => {
 
     setCreatingStore(true);
     try {
-      const { data, error } = await supabase.rpc("admin_create_store_account", {
-        _email: storeEmail.trim(),
-        _password: storePassword.trim(),
-        _store_name: storeName.trim(),
+      const { data, error } = await supabase.functions.invoke("admin-create-store-account", {
+        body: {
+          email: storeEmail.trim(),
+          password: storePassword.trim(),
+          store_name: storeName.trim(),
+        },
       });
       if (error) throw error;
       
