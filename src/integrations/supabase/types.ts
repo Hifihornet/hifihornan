@@ -133,6 +133,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          is_system_message: boolean | null
           read_at: string | null
           sender_id: string
         }
@@ -141,6 +142,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          is_system_message?: boolean | null
           read_at?: string | null
           sender_id: string
         }
@@ -149,6 +151,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          is_system_message?: boolean | null
           read_at?: string | null
           sender_id?: string
         }
@@ -260,6 +263,18 @@ export type Database = {
       }
       admin_send_broadcast: {
         Args: { _content: string; _title: string }
+        Returns: string
+      }
+      admin_send_direct_message: {
+        Args: {
+          _content: string
+          _listing_id: string
+          _recipient_user_id: string
+        }
+        Returns: string
+      }
+      admin_send_message_to_user: {
+        Args: { _content: string; _recipient_user_id: string }
         Returns: string
       }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }

@@ -103,20 +103,30 @@ const Messages = () => {
           // Get listing info
           const { data: listing } = await supabase
             .from("listings")
-            .select("title, images")
+            .select("title, images, status")
             .eq("id", conv.listing_id)
             .single();
 
-          // Get other user's name
+          // Check if this is a system/admin conversation
+          const isSystemConversation = listing?.status === "system";
+
+          // Get other user's name - for system conversations, show "HiFiHörnan"
           const otherUserId = conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id;
-          const { data: otherUserName } = await supabase.rpc("get_seller_display_name", {
-            _user_id: otherUserId,
-          });
+          let otherUserName = "Användare";
+          
+          if (isSystemConversation) {
+            otherUserName = "HiFiHörnan";
+          } else {
+            const { data: fetchedName } = await supabase.rpc("get_seller_display_name", {
+              _user_id: otherUserId,
+            });
+            otherUserName = fetchedName || "Användare";
+          }
 
           // Get last message
           const { data: lastMsg } = await supabase
             .from("messages")
-            .select("content, created_at")
+            .select("content, created_at, is_system_message")
             .eq("conversation_id", conv.id)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -132,10 +142,10 @@ const Messages = () => {
 
           return {
             ...conv,
-            listing_title: listing?.title || "Annons borttagen",
+            listing_title: isSystemConversation ? "Meddelande från HiFiHörnan" : (listing?.title || "Annons borttagen"),
             listing_image: listing?.images?.[0] || null,
             other_user_id: otherUserId,
-            other_user_name: otherUserName || "Användare",
+            other_user_name: otherUserName,
             last_message: lastMsg?.content,
             last_message_at: lastMsg?.created_at,
             unread_count: unreadCount || 0,

@@ -18,6 +18,7 @@ interface Message {
   content: string;
   created_at: string;
   read_at: string | null;
+  is_system_message?: boolean;
 }
 
 interface ChatDialogProps {
@@ -248,7 +249,10 @@ const ChatDialog = ({
           ) : (
             <div className="space-y-3">
               {messages.map((msg) => {
-                const isOwn = msg.sender_id === user?.id;
+                const isOwn = msg.sender_id === user?.id && !msg.is_system_message;
+                const isSystemMessage = msg.is_system_message;
+                const senderLabel = isSystemMessage ? "HiFiHörnan" : null;
+                
                 return (
                   <div
                     key={msg.id}
@@ -258,9 +262,16 @@ const ChatDialog = ({
                       className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                         isOwn
                           ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : isSystemMessage
+                          ? "bg-gradient-to-r from-primary/20 to-accent/20 text-foreground rounded-bl-sm border border-primary/30"
                           : "bg-secondary text-foreground rounded-bl-sm"
                       }`}
                     >
+                      {senderLabel && (
+                        <p className="text-xs font-semibold text-primary mb-1">
+                          {senderLabel}
+                        </p>
+                      )}
                       <p className="text-sm whitespace-pre-wrap break-words">
                         {msg.content}
                       </p>
