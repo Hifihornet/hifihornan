@@ -5,9 +5,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import CreatorBadge from "@/components/CreatorBadge";
+import OnlineIndicator from "@/components/OnlineIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
+import { useIsUserOnline } from "@/hooks/useOnlinePresence";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +44,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isCreator } = useUserRoles(userId);
+  const isUserOnline = useIsUserOnline(userId);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -497,9 +500,12 @@ const Profile = () => {
                   </div>
                 ) : (
                   <>
-                    <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
-                      {profile.display_name || "Användare"}
-                    </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+                        {profile.display_name || "Användare"}
+                      </h1>
+                      <OnlineIndicator isOnline={isUserOnline} size="md" showLabel />
+                    </div>
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       {profile.location && (
                         <span className="flex items-center gap-1">

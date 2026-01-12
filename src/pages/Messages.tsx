@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MessageCircle, ArrowLeft, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import OnlineIndicator from "@/components/OnlineIndicator";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOnlineUsers } from "@/hooks/useOnlinePresence";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 import ChatDialog from "@/components/ChatDialog";
@@ -20,6 +22,7 @@ interface Conversation {
   updated_at: string;
   listing_title?: string;
   listing_image?: string;
+  other_user_id?: string;
   other_user_name?: string;
   last_message?: string;
   last_message_at?: string;
@@ -33,6 +36,13 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+
+  // Get list of other user IDs for online status
+  const otherUserIds = useMemo(() => 
+    conversations.map(c => c.other_user_id).filter(Boolean) as string[],
+    [conversations]
+  );
+  const { isOnline } = useOnlineUsers(otherUserIds);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -124,6 +134,7 @@ const Messages = () => {
             ...conv,
             listing_title: listing?.title || "Annons borttagen",
             listing_image: listing?.images?.[0] || null,
+            other_user_id: otherUserId,
             other_user_name: otherUserName || "Användare",
             last_message: lastMsg?.content,
             last_message_at: lastMsg?.created_at,
@@ -228,9 +239,14 @@ const Messages = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <h3 className="font-medium text-foreground truncate">
-                              {conv.other_user_name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-foreground truncate">
+                                {conv.other_user_name}
+                              </h3>
+                              {conv.other_user_id && (
+                                <OnlineIndicator isOnline={isOnline(conv.other_user_id)} size="sm" />
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground truncate">
                               {conv.listing_title}
                             </p>
