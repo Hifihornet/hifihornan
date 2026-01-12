@@ -5,11 +5,42 @@ import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
-import { mockListings, categories } from "@/data/listings";
+import { categories } from "@/data/listings";
 import heroImage from "@/assets/hero-hifi.jpg";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const Index = () => {
-  const featuredListings = mockListings.slice(0, 6);
+  const { data: listings = [] } = useQuery({
+    queryKey: ["featured-listings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      
+      if (error) throw error;
+      return data.map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        condition: item.condition,
+        brand: item.brand,
+        year: item.year,
+        location: item.location,
+        sellerName: "Säljare",
+        sellerEmail: "",
+        images: item.images || [],
+        createdAt: item.created_at,
+      }));
+    },
+  });
+
+  const featuredListings = listings;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -57,7 +88,7 @@ const Index = () => {
             <div className="flex items-center gap-6 text-sm text-muted-foreground animate-fade-in-up delay-400">
               <span className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                {mockListings.length}+ aktiva annonser
+                {listings.length} aktiva annonser
               </span>
               <span>•</span>
               <span>Gratis att sälja</span>
