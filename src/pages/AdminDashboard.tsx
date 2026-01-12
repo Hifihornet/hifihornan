@@ -13,7 +13,9 @@ import {
   Eye,
   Send,
   Megaphone,
-  Mail
+  Mail,
+  Store,
+  Plus
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -118,10 +120,18 @@ const AdminDashboard = () => {
   const [directMessageContent, setDirectMessageContent] = useState("");
   const [sendingDirectMessage, setSendingDirectMessage] = useState(false);
 
+  // Store account form state
+  const [storeDialogOpen, setStoreDialogOpen] = useState(false);
+  const [storeEmail, setStoreEmail] = useState("");
+  const [storePassword, setStorePassword] = useState("");
+  const [storeName, setStoreName] = useState("");
+  const [creatingStore, setCreatingStore] = useState(false);
+
   const hasAccess = isCreator || isAdmin || isModerator;
   const canDeleteUsers = isAdmin;
   const canSendBroadcasts = isAdmin;
   const canSendDirectMessages = isAdmin;
+  const canCreateStoreAccounts = isAdmin;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -228,6 +238,44 @@ const AdminDashboard = () => {
       toast.error("Kunde inte skicka meddelande");
     } finally {
       setSendingDirectMessage(false);
+    }
+  };
+
+  const handleCreateStoreAccount = async () => {
+    if (!storeEmail.trim() || !storePassword.trim() || !storeName.trim()) {
+      toast.error("Fyll i alla fält");
+      return;
+    }
+
+    if (storePassword.length < 6) {
+      toast.error("Lösenordet måste vara minst 6 tecken");
+      return;
+    }
+
+    setCreatingStore(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_create_store_account", {
+        _email: storeEmail.trim(),
+        _password: storePassword.trim(),
+        _store_name: storeName.trim(),
+      });
+      if (error) throw error;
+      
+      toast.success(`Butikskonto skapat för ${storeName}`);
+      setStoreDialogOpen(false);
+      setStoreEmail("");
+      setStorePassword("");
+      setStoreName("");
+      fetchProfiles();
+    } catch (err: any) {
+      console.error("Error creating store account:", err);
+      if (err.message?.includes("duplicate key") || err.message?.includes("already exists")) {
+        toast.error("E-postadressen används redan");
+      } else {
+        toast.error("Kunde inte skapa butikskonto");
+      }
+    } finally {
+      setCreatingStore(false);
     }
   };
 
@@ -356,68 +404,148 @@ const AdminDashboard = () => {
           </div>
 
           {/* Admin Actions */}
-          {canSendBroadcasts && (
-            <div className="mb-8">
-              <Dialog open={broadcastDialogOpen} onOpenChange={setBroadcastDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="glow" className="gap-2">
-                    <Megaphone className="w-4 h-4" />
-                    Skicka meddelande till alla
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Skicka meddelande till alla användare</DialogTitle>
-                    <DialogDescription>
-                      Detta meddelande kommer att visas för alla {profiles.length} registrerade användare.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-1.5 block">
-                        Titel
-                      </label>
-                      <Input
-                        value={broadcastTitle}
-                        onChange={(e) => setBroadcastTitle(e.target.value)}
-                        placeholder="T.ex. Viktigt meddelande"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-1.5 block">
-                        Meddelande
-                      </label>
-                      <Textarea
-                        value={broadcastContent}
-                        onChange={(e) => setBroadcastContent(e.target.value)}
-                        placeholder="Skriv ditt meddelande här..."
-                        rows={5}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setBroadcastDialogOpen(false)}
-                      disabled={sendingBroadcast}
-                    >
-                      Avbryt
+          {isAdmin && (
+            <div className="mb-8 flex flex-wrap gap-3">
+              {canSendBroadcasts && (
+                <Dialog open={broadcastDialogOpen} onOpenChange={setBroadcastDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="glow" className="gap-2">
+                      <Megaphone className="w-4 h-4" />
+                      Skicka meddelande till alla
                     </Button>
-                    <Button
-                      variant="glow"
-                      onClick={handleSendBroadcast}
-                      disabled={sendingBroadcast || !broadcastTitle.trim() || !broadcastContent.trim()}
-                    >
-                      {sendingBroadcast ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
-                      Skicka
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>Skicka meddelande till alla användare</DialogTitle>
+                      <DialogDescription>
+                        Detta meddelande kommer att visas för alla {profiles.length} registrerade användare.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
+                          Titel
+                        </label>
+                        <Input
+                          value={broadcastTitle}
+                          onChange={(e) => setBroadcastTitle(e.target.value)}
+                          placeholder="T.ex. Viktigt meddelande"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
+                          Meddelande
+                        </label>
+                        <Textarea
+                          value={broadcastContent}
+                          onChange={(e) => setBroadcastContent(e.target.value)}
+                          placeholder="Skriv ditt meddelande här..."
+                          rows={5}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setBroadcastDialogOpen(false)}
+                        disabled={sendingBroadcast}
+                      >
+                        Avbryt
+                      </Button>
+                      <Button
+                        variant="glow"
+                        onClick={handleSendBroadcast}
+                        disabled={sendingBroadcast || !broadcastTitle.trim() || !broadcastContent.trim()}
+                      >
+                        {sendingBroadcast ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                        Skicka
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+
+              {canCreateStoreAccounts && (
+                <Dialog open={storeDialogOpen} onOpenChange={setStoreDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Store className="w-4 h-4" />
+                      <Plus className="w-3 h-3" />
+                      Skapa butikskonto
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Store className="w-5 h-5" />
+                        Skapa nytt butikskonto
+                      </DialogTitle>
+                      <DialogDescription>
+                        Skapa ett konto för en butik att använda på HiFiHörnan.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
+                          Butiksnamn
+                        </label>
+                        <Input
+                          value={storeName}
+                          onChange={(e) => setStoreName(e.target.value)}
+                          placeholder="T.ex. HiFi-Butiken AB"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
+                          E-post
+                        </label>
+                        <Input
+                          type="email"
+                          value={storeEmail}
+                          onChange={(e) => setStoreEmail(e.target.value)}
+                          placeholder="butik@exempel.se"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
+                          Lösenord
+                        </label>
+                        <Input
+                          type="password"
+                          value={storePassword}
+                          onChange={(e) => setStorePassword(e.target.value)}
+                          placeholder="Minst 6 tecken"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setStoreDialogOpen(false)}
+                        disabled={creatingStore}
+                      >
+                        Avbryt
+                      </Button>
+                      <Button
+                        variant="glow"
+                        onClick={handleCreateStoreAccount}
+                        disabled={creatingStore || !storeEmail.trim() || !storePassword.trim() || !storeName.trim()}
+                      >
+                        {creatingStore ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
+                        Skapa konto
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           )}
 
