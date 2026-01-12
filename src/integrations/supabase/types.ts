@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      broadcast_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -233,6 +257,10 @@ export type Database = {
           listing_count: number
           user_id: string
         }[]
+      }
+      admin_send_broadcast: {
+        Args: { _content: string; _title: string }
+        Returns: string
       }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_profile_count: { Args: never; Returns: number }
