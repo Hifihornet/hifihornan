@@ -73,15 +73,12 @@ const Profile = () => {
         if (profileError) throw profileError;
         profileData = data;
       } else {
-        // Use public_profiles view for other users (excludes phone, location)
+        // Use secure function for other users (excludes phone, location)
         const { data, error: profileError } = await supabase
-          .from("public_profiles")
-          .select("id, user_id, display_name, avatar_url, bio, setup_images, created_at")
-          .eq("user_id", userId)
-          .maybeSingle();
+          .rpc('get_public_profile_by_user_id', { _user_id: userId });
 
         if (profileError) throw profileError;
-        profileData = data ? { ...data, location: null } : null;
+        profileData = data && data.length > 0 ? { ...data[0], location: null } : null;
       }
       
       if (!profileData) {
