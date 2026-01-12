@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Plus, User, LogOut, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
+import useUnreadMessages from "@/hooks/useUnreadMessages";
 import CreatorBadge from "@/components/CreatorBadge";
 import logo from "@/assets/logo.png";
 import {
@@ -20,6 +21,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isCreator } = useUserRoles(user?.id);
+  const unreadCount = useUnreadMessages();
 
   const navLinks = [
     { href: "/", label: "Hem" },
@@ -69,6 +71,11 @@ const Header = () => {
                     <Button variant="outline" size="icon" className="relative">
                       <User className="w-4 h-4" />
                       {isCreator && <CreatorBadge />}
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -83,9 +90,14 @@ const Header = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/meddelanden" className="cursor-pointer">
+                      <Link to="/meddelanden" className="cursor-pointer flex items-center">
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Meddelanden
+                        {unreadCount > 0 && (
+                          <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -150,9 +162,16 @@ const Header = () => {
                       </Button>
                     </Link>
                     <Link to="/meddelanden" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" className="w-full justify-start">
-                        <MessageCircle className="w-4 h-4" />
-                        Meddelanden
+                      <Button variant="outline" className="w-full justify-between">
+                        <span className="flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4" />
+                          Meddelanden
+                        </span>
+                        {unreadCount > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
                       </Button>
                     </Link>
                     <Link to="/create" onClick={() => setIsMenuOpen(false)}>
