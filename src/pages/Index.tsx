@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
+import AdBanner from "@/components/AdBanner";
 import { categories } from "@/data/listings";
 import heroImage from "@/assets/hero-hifi.jpg";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,6 +131,11 @@ const Index = () => {
             ))}
           </div>
         </div>
+
+        {/* Ad Banner */}
+        <div className="mt-12">
+          <AdBanner slot="1234567890" format="horizontal" className="max-w-4xl mx-auto" />
+        </div>
       </section>
 
       {/* Featured Listings */}
@@ -166,6 +172,11 @@ const Index = () => {
               </Button>
             </Link>
           </div>
+        </div>
+
+        {/* Ad Banner */}
+        <div className="mt-12">
+          <AdBanner slot="1234567891" format="horizontal" className="max-w-4xl mx-auto" />
         </div>
       </section>
 

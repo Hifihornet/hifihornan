@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
+import AdBanner from "@/components/AdBanner";
 import { conditions, Listing } from "@/data/listings";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -217,6 +218,11 @@ const Browse = () => {
               </Button>
             </div>
           )}
+
+          {/* Ad Banner */}
+          <div className="mt-12">
+            <AdBanner slot="1234567892" format="horizontal" className="max-w-4xl mx-auto" />
+          </div>
         </div>
       </main>
 

@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin, Calendar, MessageCircle, Phone, User, Tag, Clock, Lo
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AdBanner from "@/components/AdBanner";
 import { mockListings, categories, conditions, Listing } from "@/data/listings";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -303,6 +304,10 @@ const ListingDetail = () => {
                 </div>
               </div>
 
+              {/* Ad Banner in Sidebar */}
+              <div className="mt-6">
+                <AdBanner slot="1234567893" format="rectangle" />
+              </div>
             </div>
           </div>
         </div>
