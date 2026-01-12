@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
 const CONSENT_KEY = "hifihornan_cookie_consent";
 
-const CookieConsent = () => {
+const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ const CookieConsent = () => {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-fade-in-up">
+    <div ref={ref} className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-fade-in-up">
       <div className="container mx-auto max-w-4xl">
         <div className="bg-card border border-border rounded-lg shadow-lg p-6 relative">
           <button 
@@ -83,6 +83,8 @@ const CookieConsent = () => {
       </div>
     </div>
   );
-};
+});
+
+CookieConsent.displayName = "CookieConsent";
 
 export default CookieConsent;
