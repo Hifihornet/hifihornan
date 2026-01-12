@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import StoreBadge from "@/components/StoreBadge";
+import CreatorBadge from "@/components/CreatorBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,6 +71,7 @@ interface AdminProfile {
   created_at: string;
   last_seen: string | null;
   listing_count: number;
+  roles?: string[];
 }
 
 interface BroadcastMessage {
@@ -319,7 +322,7 @@ const AdminDashboard = () => {
   const fetchProfiles = async () => {
     setLoadingProfiles(true);
     try {
-      const { data, error } = await supabase.rpc("admin_get_all_profiles");
+      const { data, error } = await supabase.rpc("admin_get_all_profiles_with_roles");
       if (error) throw error;
       setProfiles(data || []);
     } catch (err) {
@@ -769,9 +772,27 @@ const AdminDashboard = () => {
                             <div className="flex-1 min-w-0">
                               <Link
                                 to={`/profil/${profile.user_id}`}
-                                className="font-medium text-foreground hover:text-primary truncate block"
+                                className="font-medium text-foreground hover:text-primary truncate flex items-center gap-2"
                               >
                                 {profile.display_name || "Okänd användare"}
+                                {profile.roles?.includes("admin") && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
+                                    Admin
+                                  </span>
+                                )}
+                                {profile.roles?.includes("creator") && (
+                                  <span className="relative inline-block">
+                                    <CreatorBadge size="sm" className="relative" />
+                                  </span>
+                                )}
+                                {profile.roles?.includes("store") && (
+                                  <StoreBadge showLabel size="sm" />
+                                )}
+                                {profile.roles?.includes("moderator") && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-medium">
+                                    Mod
+                                  </span>
+                                )}
                               </Link>
                               <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
                                 <span>{profile.listing_count} annonser</span>
