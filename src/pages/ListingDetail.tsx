@@ -46,11 +46,7 @@ const ListingDetail = () => {
             location,
             images,
             created_at,
-            user_id,
-            profiles!listings_user_id_fkey (
-              display_name,
-              phone
-            )
+            user_id
           `)
           .eq("id", id)
           .single();
@@ -58,6 +54,16 @@ const ListingDetail = () => {
         if (error) {
           console.error("Error fetching listing:", error);
         } else if (data) {
+          // Use secure function to get seller display name
+          let sellerDisplayName = "Säljare";
+          if (data.user_id) {
+            const { data: nameData } = await supabase
+              .rpc('get_seller_display_name', { _user_id: data.user_id });
+            if (nameData) {
+              sellerDisplayName = nameData;
+            }
+          }
+
           setListing({
             id: data.id,
             title: data.title,
@@ -68,9 +74,9 @@ const ListingDetail = () => {
             brand: data.brand,
             year: data.year,
             location: data.location,
-            sellerName: (data.profiles as any)?.display_name || "Säljare",
+            sellerName: sellerDisplayName,
             sellerEmail: "",
-            sellerPhone: (data.profiles as any)?.phone,
+            sellerPhone: undefined, // Phone is no longer exposed publicly
             images: data.images || [],
             createdAt: data.created_at,
           });
