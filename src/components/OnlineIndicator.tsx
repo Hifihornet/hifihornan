@@ -1,7 +1,10 @@
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { sv } from "date-fns/locale";
 
 interface OnlineIndicatorProps {
   isOnline: boolean;
+  lastSeen?: string | null;
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
   className?: string;
@@ -9,6 +12,7 @@ interface OnlineIndicatorProps {
 
 const OnlineIndicator = ({ 
   isOnline, 
+  lastSeen,
   size = "md", 
   showLabel = false,
   className 
@@ -19,6 +23,17 @@ const OnlineIndicator = ({
     lg: "w-4 h-4",
   };
 
+  const getStatusText = () => {
+    if (isOnline) return "Online";
+    if (lastSeen) {
+      return `Online ${formatDistanceToNow(new Date(lastSeen), { 
+        addSuffix: true, 
+        locale: sv 
+      })}`;
+    }
+    return "Offline";
+  };
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <span
@@ -27,7 +42,7 @@ const OnlineIndicator = ({
           sizeClasses[size],
           isOnline ? "bg-primary shadow-sm" : "bg-muted-foreground/40"
         )}
-        title={isOnline ? "Online" : "Offline"}
+        title={getStatusText()}
       />
       {showLabel && (
         <span
@@ -36,7 +51,7 @@ const OnlineIndicator = ({
             isOnline ? "text-foreground" : "text-muted-foreground"
           )}
         >
-          {isOnline ? "Online" : "Offline"}
+          {getStatusText()}
         </span>
       )}
     </div>

@@ -145,6 +145,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          last_seen: string | null
           location: string | null
           phone: string | null
           setup_images: string[] | null
@@ -157,6 +158,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_seen?: string | null
           location?: string | null
           phone?: string | null
           setup_images?: string[] | null
@@ -169,6 +171,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_seen?: string | null
           location?: string | null
           phone?: string | null
           setup_images?: string[] | null
@@ -224,6 +227,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          last_seen: string
           setup_images: string[]
           user_id: string
         }[]
@@ -244,6 +248,7 @@ export type Database = {
         Args: { listing_id: string }
         Returns: undefined
       }
+      update_user_last_seen: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "creator" | "admin" | "moderator"
