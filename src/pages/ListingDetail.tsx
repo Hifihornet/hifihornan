@@ -1,24 +1,23 @@
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Calendar, Mail, Phone, User, Tag, Clock, Loader2 } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, MapPin, Calendar, MessageCircle, Phone, User, Tag, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { mockListings, categories, conditions, Listing } from "@/data/listings";
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import ChatDialog from "@/components/ChatDialog";
 
 const ListingDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [sellerId, setSellerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showContact, setShowContact] = useState(false);
-  const [message, setMessage] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -136,15 +135,17 @@ const ListingDetail = () => {
   const category = categories.find((c) => c.id === listing.category);
   const condition = conditions.find((c) => c.id === listing.condition);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success("Meddelande skickat!", {
-      description: `Ditt meddelande till ${listing.sellerName} har skickats.`,
-    });
-    setShowContact(false);
-    setMessage("");
-    setName("");
-    setEmail("");
+  const handleStartChat = () => {
+    if (!user) {
+      toast.error("Du måste logga in för att skicka meddelanden");
+      navigate("/auth");
+      return;
+    }
+    if (user.id === sellerId) {
+      toast.error("Du kan inte skicka meddelande till dig själv");
+      return;
+    }
+    setChatOpen(true);
   };
 
   return (
@@ -260,10 +261,10 @@ const ListingDetail = () => {
                     variant="glow"
                     size="lg"
                     className="w-full"
-                    onClick={() => setShowContact(!showContact)}
+                    onClick={handleStartChat}
                   >
-                    <Mail className="w-4 h-4" />
-                    Kontakta säljaren
+                    <MessageCircle className="w-4 h-4" />
+                    Skicka meddelande
                   </Button>
 
                   {listing.sellerPhone && (
@@ -295,61 +296,24 @@ const ListingDetail = () => {
                 </div>
               </div>
 
-              {/* Contact Form */}
-              {showContact && (
-                <div className="p-6 rounded-xl bg-card border border-border animate-fade-in-up">
-                  <h3 className="font-display font-semibold text-foreground mb-4">
-                    Skicka meddelande
-                  </h3>
-                  <form onSubmit={handleSendMessage} className="space-y-4">
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-1.5 block">
-                        Ditt namn
-                      </label>
-                      <Input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ange ditt namn"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-1.5 block">
-                        Din e-post
-                      </label>
-                      <Input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="din@email.se"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-1.5 block">
-                        Meddelande
-                      </label>
-                      <Textarea
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder={`Hej! Jag är intresserad av "${listing.title}"...`}
-                        rows={4}
-                        required
-                        className="bg-secondary/50 border-border focus:border-primary/50"
-                      />
-                    </div>
-                    <Button type="submit" variant="glow" className="w-full">
-                      Skicka meddelande
-                    </Button>
-                  </form>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </main>
 
       <Footer />
+
+      {/* Chat Dialog */}
+      {sellerId && listing && (
+        <ChatDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          listingId={id || ""}
+          listingTitle={listing.title}
+          sellerId={sellerId}
+          sellerName={listing.sellerName}
+        />
+      )}
     </div>
   );
 };
