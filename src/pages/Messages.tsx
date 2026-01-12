@@ -12,6 +12,7 @@ import { useOnlineUsers } from "@/hooks/useOnlinePresence";
 import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 import ChatDialog from "@/components/ChatDialog";
+import logoImage from "@/assets/logo.png";
 
 interface Conversation {
   id: string;
@@ -27,6 +28,7 @@ interface Conversation {
   last_message?: string;
   last_message_at?: string;
   unread_count?: number;
+  is_system_conversation?: boolean;
 }
 
 const Messages = () => {
@@ -149,6 +151,7 @@ const Messages = () => {
             last_message: lastMsg?.content,
             last_message_at: lastMsg?.created_at,
             unread_count: unreadCount || 0,
+            is_system_conversation: isSystemConversation,
           };
         })
       );
@@ -232,9 +235,15 @@ const Messages = () => {
                       onClick={() => openChat(conv)}
                       className="w-full p-4 rounded-xl bg-card border border-border hover:border-primary/50 transition-all flex gap-4 items-start text-left"
                     >
-                      {/* Listing Image */}
+                      {/* Listing Image or Logo for system conversations */}
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-secondary shrink-0 flex items-center justify-center">
-                        {conv.listing_image ? (
+                        {conv.is_system_conversation ? (
+                          <img
+                            src={logoImage}
+                            alt="HiFiHörnan"
+                            className="w-12 h-12 object-contain"
+                          />
+                        ) : conv.listing_image ? (
                           <img
                             src={conv.listing_image}
                             alt={conv.listing_title}
@@ -253,13 +262,15 @@ const Messages = () => {
                               <h3 className="font-medium text-foreground truncate">
                                 {conv.other_user_name}
                               </h3>
-                              {conv.other_user_id && (
+                              {!conv.is_system_conversation && conv.other_user_id && (
                                 <OnlineIndicator isOnline={isOnline(conv.other_user_id)} size="sm" />
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {conv.listing_title}
-                            </p>
+                            {!conv.is_system_conversation && (
+                              <p className="text-sm text-muted-foreground truncate">
+                                {conv.listing_title}
+                              </p>
+                            )}
                           </div>
                           <div className="shrink-0 text-right">
                             {conv.last_message_at && (
@@ -308,6 +319,7 @@ const Messages = () => {
           }
           sellerName={selectedConversation.other_user_name || ""}
           existingConversationId={selectedConversation.id}
+          isSystemConversation={selectedConversation.is_system_conversation}
         />
       )}
     </div>

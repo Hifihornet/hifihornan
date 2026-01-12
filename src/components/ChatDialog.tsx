@@ -11,6 +11,7 @@ import OnlineIndicator from "@/components/OnlineIndicator";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
+import logoImage from "@/assets/logo.png";
 
 interface Message {
   id: string;
@@ -28,7 +29,8 @@ interface ChatDialogProps {
   listingTitle: string;
   sellerId: string;
   sellerName: string;
-  existingConversationId?: string; // When opening from Messages page
+  existingConversationId?: string;
+  isSystemConversation?: boolean;
 }
 
 const ChatDialog = ({
@@ -39,6 +41,7 @@ const ChatDialog = ({
   sellerId,
   sellerName,
   existingConversationId,
+  isSystemConversation = false,
 }: ChatDialogProps) => {
   const { user } = useAuth();
   const isSellerOnline = useIsUserOnline(sellerId);
@@ -47,6 +50,7 @@ const ChatDialog = ({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isSystemChat, setIsSystemChat] = useState(isSystemConversation);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -83,6 +87,11 @@ const ChatDialog = ({
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
+          
+          // Check if this is a system message
+          if (newMsg.is_system_message) {
+            setIsSystemChat(true);
+          }
           
           // Mark message as read if it's from the other user and chat is open
           if (newMsg.sender_id !== user.id && !newMsg.read_at) {
@@ -162,6 +171,12 @@ const ChatDialog = ({
       } else {
         setMessages(msgs || []);
         
+        // Check if any message is a system message
+        const hasSystemMessage = (msgs || []).some(m => m.is_system_message);
+        if (hasSystemMessage) {
+          setIsSystemChat(true);
+        }
+        
         // Mark unread messages from other user as read
         const unreadMessages = (msgs || []).filter(
           (m) => m.sender_id !== user.id && !m.read_at
@@ -217,19 +232,42 @@ const ChatDialog = ({
     }
   };
 
+  // Determine display name and whether to show online status
+  const displayName = isSystemChat ? "HiFiHörnan" : sellerName;
+  const showOnlineStatus = !isSystemChat;
+  const showListingInfo = !isSystemChat;
+  const canReply = !isSystemChat;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] h-[600px] flex flex-col p-0">
         <DialogHeader className="p-4 pb-2 border-b border-border">
-          <div className="flex items-center gap-2">
-            <DialogTitle className="text-lg font-display">
-              Chatt med {sellerName}
-            </DialogTitle>
-            <OnlineIndicator isOnline={isSellerOnline} size="sm" showLabel />
+          <div className="flex items-center gap-3">
+            {isSystemChat && (
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0">
+                <img 
+                  src={logoImage} 
+                  alt="HiFiHörnan" 
+                  className="w-8 h-8 object-contain"
+                />
+              </div>
+            )}
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-lg font-display">
+                  {displayName}
+                </DialogTitle>
+                {showOnlineStatus && (
+                  <OnlineIndicator isOnline={isSellerOnline} size="sm" showLabel />
+                )}
+              </div>
+              {showListingInfo && (
+                <p className="text-sm text-muted-foreground truncate">
+                  Angående: {listingTitle}
+                </p>
+              )}
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground truncate">
-            Angående: {listingTitle}
-          </p>
         </DialogHeader>
 
         <ScrollArea className="flex-1 p-4">
@@ -242,9 +280,11 @@ const ChatDialog = ({
               <p className="text-muted-foreground mb-2">
                 Inga meddelanden ännu
               </p>
-              <p className="text-sm text-muted-foreground">
-                Skriv ett meddelande för att starta konversationen
-              </p>
+              {canReply && (
+                <p className="text-sm text-muted-foreground">
+                  Skriv ett meddelande för att starta konversationen
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -295,30 +335,38 @@ const ChatDialog = ({
           )}
         </ScrollArea>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex gap-2">
-            <Textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Skriv ett meddelande..."
-              className="min-h-[44px] max-h-[120px] resize-none"
-              rows={1}
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={!newMessage.trim() || sending}
-              size="icon"
-              className="shrink-0"
-            >
-              {sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+        {canReply ? (
+          <div className="p-4 border-t border-border">
+            <div className="flex gap-2">
+              <Textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Skriv ett meddelande..."
+                className="min-h-[44px] max-h-[120px] resize-none"
+                rows={1}
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || sending}
+                size="icon"
+                className="shrink-0"
+              >
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-4 border-t border-border">
+            <p className="text-sm text-center text-muted-foreground">
+              Detta är ett meddelande från HiFiHörnan och kan inte besvaras.
+            </p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
