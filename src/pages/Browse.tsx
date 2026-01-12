@@ -221,7 +221,7 @@ const Browse = () => {
 
           {/* Ad Banner */}
           <div className="mt-12">
-            <AdBanner slot="1234567892" format="horizontal" className="max-w-4xl mx-auto" />
+            <AdBanner slot="8997727388" format="horizontal" className="max-w-4xl mx-auto" />
           </div>
         </div>
       </main>
