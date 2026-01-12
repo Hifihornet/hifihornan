@@ -67,29 +67,35 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
           location: string | null
           phone: string | null
+          setup_images: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           location?: string | null
           phone?: string | null
+          setup_images?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           location?: string | null
           phone?: string | null
+          setup_images?: string[] | null
           updated_at?: string
           user_id?: string
         }
