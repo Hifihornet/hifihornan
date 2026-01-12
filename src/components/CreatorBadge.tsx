@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 
 interface CreatorBadgeProps {
   className?: string;
@@ -6,14 +6,17 @@ interface CreatorBadgeProps {
 }
 
 const CreatorBadge = ({ className = "", size = "sm" }: CreatorBadgeProps) => {
-  const sizeClasses = size === "sm" ? "w-4 h-4 text-[10px]" : "w-5 h-5 text-xs";
+  const sizeClasses = size === "sm" 
+    ? "w-4 h-4" 
+    : "w-6 h-6";
+  const iconSize = size === "sm" ? "w-2.5 h-2.5" : "w-3.5 h-3.5";
   
   return (
     <div 
-      className={`absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground animate-pulse-glow ${sizeClasses} ${className}`}
-      title="Skapare"
+      className={`absolute flex items-center justify-center rounded-full bg-[#1d9bf0] text-white shadow-md ${sizeClasses} ${className}`}
+      title="Verifierad skapare"
     >
-      <Sparkles className={size === "sm" ? "w-2.5 h-2.5" : "w-3 h-3"} />
+      <Check className={iconSize} strokeWidth={3} />
     </div>
   );
 };
