@@ -12,6 +12,7 @@ import CreateListing from "./pages/CreateListing";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
+import TermsOfService from "./pages/TermsOfService";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/integritetspolicy" element={<PrivacyPolicy />} />
             <Route path="/cookies" element={<CookiePolicy />} />
+            <Route path="/anvandarvillkor" element={<TermsOfService />} />
             <Route path="/profil/:userId" element={<Profile />} />
             <Route path="/meddelanden" element={<Messages />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
