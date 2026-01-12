@@ -28,7 +28,7 @@ const ListingCard = ({ listing }: ListingCardProps) => {
             <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-bold">
               {condition?.label}
             </span>
-            {listing.viewCount !== undefined && listing.viewCount > 0 && (
+            {listing.viewCount !== undefined && (
               <span className="glass px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
                 <Eye className="w-3 h-3" />
                 {listing.viewCount}
