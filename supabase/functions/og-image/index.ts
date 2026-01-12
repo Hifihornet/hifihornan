@@ -40,8 +40,10 @@ serve(async (req) => {
     const baseUrl = "https://hifihornan.se";
     const listingUrl = `${baseUrl}/listing/${listing.id}`;
     const imageUrl = listing.images?.[0] || `${baseUrl}/og-image.png`;
-    const title = listing.title;
-    const description = `${listing.brand} - ${listing.price.toLocaleString("sv-SE")} kr - ${listing.location}. ${listing.description?.substring(0, 100) || ""}`;
+    const title = escapeHtml(listing.title);
+    const description = escapeHtml(`${listing.brand} - ${listing.price.toLocaleString("sv-SE")} kr - ${listing.location}. ${listing.description?.substring(0, 100) || ""}`);
+
+    console.log("Generating OG for:", { title, imageUrl, listingUrl });
 
     // Return HTML with OG meta tags for social media crawlers
     const html = `<!DOCTYPE html>
@@ -58,6 +60,9 @@ serve(async (req) => {
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:image" content="${imageUrl}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/jpeg">
   <meta property="og:site_name" content="Hifihörnan">
   <meta property="og:locale" content="sv_SE">
   <meta property="product:price:amount" content="${listing.price}">
@@ -80,9 +85,11 @@ serve(async (req) => {
 </html>`;
 
     return new Response(html, {
+      status: 200,
       headers: {
-        ...corsHeaders,
         "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=3600",
+        ...corsHeaders,
       },
     });
   } catch (error) {
@@ -90,3 +97,12 @@ serve(async (req) => {
     return new Response("Internal server error", { status: 500, headers: corsHeaders });
   }
 });
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
