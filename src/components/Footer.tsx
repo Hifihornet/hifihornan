@@ -62,6 +62,20 @@ const Footer = () => {
               </li>
             </ul>
           </div>
+
+          <div>
+            <h4 className="font-display font-semibold text-foreground mb-4">Kontakta oss</h4>
+            <ul className="space-y-2">
+              <li>
+                <a 
+                  href="mailto:support@hifihornan.se" 
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  support@hifihornan.se
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
