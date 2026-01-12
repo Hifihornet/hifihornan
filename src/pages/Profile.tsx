@@ -4,8 +4,10 @@ import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, Save, Edit2 } from 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
+import CreatorBadge from "@/components/CreatorBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import useUserRoles from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +39,7 @@ interface Profile {
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
+  const { isCreator } = useUserRoles(userId);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,8 +282,9 @@ const Profile = () => {
           {/* Profile Header */}
           <div className="bg-card border border-border rounded-xl p-6 md:p-8 mb-8">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <User className="w-10 h-10 text-primary-foreground" />
+                {isCreator && <CreatorBadge size="md" className="-top-1 -right-1" />}
               </div>
               
               <div className="flex-1">
