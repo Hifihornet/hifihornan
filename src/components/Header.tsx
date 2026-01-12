@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Plus, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import useUserRoles from "@/hooks/useUserRoles";
+import CreatorBadge from "@/components/CreatorBadge";
 import logo from "@/assets/logo.png";
 import {
   DropdownMenu,
@@ -17,6 +19,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isCreator } = useUserRoles(user?.id);
 
   const navLinks = [
     { href: "/", label: "Hem" },
@@ -63,8 +66,9 @@ const Header = () => {
                 </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" className="relative">
                       <User className="w-4 h-4" />
+                      {isCreator && <CreatorBadge />}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -130,9 +134,10 @@ const Header = () => {
                 {user ? (
                   <>
                     <Link to={`/profil/${user.id}`} onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full relative">
                         <User className="w-4 h-4" />
                         Min profil
+                        {isCreator && <CreatorBadge />}
                       </Button>
                     </Link>
                     <Link to="/create" onClick={() => setIsMenuOpen(false)}>
