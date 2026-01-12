@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, X, Plus } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ImageUpload from "@/components/ImageUpload";
 import { categories, conditions } from "@/data/listings";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreateListing = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -20,11 +26,15 @@ const CreateListing = () => {
     brand: "",
     year: "",
     location: "",
-    sellerName: "",
-    sellerEmail: "",
-    sellerPhone: "",
   });
   const [images, setImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.error("Du måste vara inloggad för att skapa annonser");
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -32,24 +42,61 @@ const CreateListing = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleImageUpload = () => {
-    // Simulate image upload - in real app would use file input
-    const placeholderImages = ["/placeholder.svg"];
-    setImages([...images, ...placeholderImages]);
-    toast.success("Bild tillagd!");
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Annons skapad!", {
-      description: "Din annons är nu publicerad och synlig för andra.",
-    });
-    navigate("/browse");
+    
+    if (!user) {
+      toast.error("Du måste vara inloggad");
+      navigate("/auth");
+      return;
+    }
+
+    if (images.length === 0) {
+      toast.error("Lägg till minst en bild");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const { error } = await supabase.from("listings").insert({
+        user_id: user.id,
+        title: formData.title,
+        description: formData.description,
+        price: parseInt(formData.price),
+        category: formData.category,
+        condition: formData.condition,
+        brand: formData.brand,
+        year: formData.year || null,
+        location: formData.location,
+        images: images,
+      });
+
+      if (error) {
+        console.error("Error creating listing:", error);
+        toast.error("Kunde inte skapa annonsen");
+        return;
+      }
+
+      toast.success("Annons skapad!", {
+        description: "Din annons är nu publicerad och synlig för andra.",
+      });
+      navigate("/browse");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Något gick fel");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -69,37 +116,8 @@ const CreateListing = () => {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Images */}
             <section className="p-6 rounded-xl bg-card border border-border">
-              <h2 className="font-display font-semibold text-foreground mb-4">Bilder</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {images.map((image, index) => (
-                  <div
-                    key={index}
-                    className="aspect-square rounded-lg bg-secondary relative overflow-hidden group"
-                  >
-                    <img src={image} alt="" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                {images.length < 8 && (
-                  <button
-                    type="button"
-                    onClick={handleImageUpload}
-                    className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Plus className="w-8 h-8" />
-                    <span className="text-xs">Lägg till</span>
-                  </button>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground mt-3">
-                Lägg till upp till 8 bilder. Första bilden blir huvudbild.
-              </p>
+              <h2 className="font-display font-semibold text-foreground mb-4">Bilder *</h2>
+              <ImageUpload images={images} onImagesChange={setImages} />
             </section>
 
             {/* Basic Info */}
@@ -241,64 +259,30 @@ const CreateListing = () => {
               </div>
             </section>
 
-            {/* Seller Info */}
-            <section className="p-6 rounded-xl bg-card border border-border">
-              <h2 className="font-display font-semibold text-foreground mb-4">
-                Dina kontaktuppgifter
-              </h2>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
-                      Ditt namn *
-                    </label>
-                    <Input
-                      name="sellerName"
-                      value={formData.sellerName}
-                      onChange={handleChange}
-                      placeholder="Förnamn"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
-                      E-post *
-                    </label>
-                    <Input
-                      name="sellerEmail"
-                      type="email"
-                      value={formData.sellerEmail}
-                      onChange={handleChange}
-                      placeholder="din@email.se"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">
-                    Telefon (valfritt)
-                  </label>
-                  <Input
-                    name="sellerPhone"
-                    value={formData.sellerPhone}
-                    onChange={handleChange}
-                    placeholder="070-123 45 67"
-                  />
-                </div>
-              </div>
-            </section>
-
             {/* Submit */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button type="submit" variant="glow" size="xl" className="flex-1">
-                <Upload className="w-5 h-5" />
-                Publicera annons
+              <Button 
+                type="submit" 
+                variant="glow" 
+                size="xl" 
+                className="flex-1"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    Publicera annons
+                  </>
+                )}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="xl"
                 onClick={() => navigate(-1)}
+                disabled={submitting}
               >
                 Avbryt
               </Button>

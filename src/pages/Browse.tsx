@@ -1,21 +1,103 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
-import { mockListings, conditions } from "@/data/listings";
+import { mockListings, conditions, Listing } from "@/data/listings";
+import { supabase } from "@/integrations/supabase/client";
 
 const Browse = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [dbListings, setDbListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const selectedCategory = searchParams.get("category");
+
+  // Fetch listings from database
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("listings")
+          .select(`
+            id,
+            title,
+            description,
+            price,
+            category,
+            condition,
+            brand,
+            year,
+            location,
+            images,
+            created_at,
+            user_id,
+            profiles!listings_user_id_fkey (
+              display_name,
+              phone
+            )
+          `)
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching listings:", error);
+        } else if (data) {
+          const formattedListings: Listing[] = data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            price: item.price,
+            category: item.category,
+            condition: item.condition,
+            brand: item.brand,
+            year: item.year,
+            location: item.location,
+            sellerName: item.profiles?.display_name || "Säljare",
+            sellerEmail: "",
+            sellerPhone: item.profiles?.phone,
+            images: item.images || [],
+            createdAt: item.created_at,
+            isFromDb: true,
+          }));
+          setDbListings(formattedListings);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel("listings-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "listings",
+        },
+        () => {
+          fetchListings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleCategoryChange = (category: string | null) => {
     if (category) {
@@ -25,8 +107,13 @@ const Browse = () => {
     }
   };
 
+  // Combine mock listings with database listings
+  const allListings = useMemo(() => {
+    return [...dbListings, ...mockListings];
+  }, [dbListings]);
+
   const filteredListings = useMemo(() => {
-    return mockListings.filter((listing) => {
+    return allListings.filter((listing) => {
       const matchesCategory = !selectedCategory || listing.category === selectedCategory;
       const matchesCondition = !selectedCondition || listing.condition === selectedCondition;
       const matchesSearch =
@@ -37,7 +124,7 @@ const Browse = () => {
 
       return matchesCategory && matchesCondition && matchesSearch;
     });
-  }, [selectedCategory, selectedCondition, searchTerm]);
+  }, [allListings, selectedCategory, selectedCondition, searchTerm]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -51,7 +138,7 @@ const Browse = () => {
               Alla annonser
             </h1>
             <p className="text-muted-foreground">
-              Hitta din nästa vintage-pärla bland {mockListings.length} annonser
+              Hitta din nästa vintage-pärla bland {allListings.length} annonser
             </p>
           </div>
 
@@ -118,12 +205,16 @@ const Browse = () => {
           {/* Results Count */}
           <div className="mb-6">
             <p className="text-sm text-muted-foreground">
-              {filteredListings.length} annonser hittades
+              {loading ? "Laddar..." : `${filteredListings.length} annonser hittades`}
             </p>
           </div>
 
           {/* Listings Grid */}
-          {filteredListings.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : filteredListings.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
