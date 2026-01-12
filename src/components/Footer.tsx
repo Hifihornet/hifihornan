@@ -9,7 +9,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src={logo} alt="Hifihörnan" className="h-12 w-auto" />
+              <img src={logo} alt="Hifihörnet" className="h-12 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
               Marknadsplatsen för HiFi-entusiaster. Köp och sälj HiFi-utrustning direkt mellan privatpersoner.
@@ -80,7 +80,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Hifihörnan. Alla rättigheter förbehållna.
+            © {new Date().getFullYear()} Hifihörnet. Alla rättigheter förbehållna.
           </p>
           <div className="flex gap-4 text-sm">
             <Link to="/anvandarvillkor" className="text-muted-foreground hover:text-primary transition-colors">

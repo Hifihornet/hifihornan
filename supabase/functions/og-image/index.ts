@@ -51,7 +51,7 @@ serve(async (req) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} - Hifihörnan</title>
+  <title>${title} - Hifihörnet</title>
   <meta name="description" content="${description}">
   
   <!-- Open Graph / Facebook -->
@@ -63,7 +63,7 @@ serve(async (req) => {
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:site_name" content="Hifihörnan">
+  <meta property="og:site_name" content="Hifihörnet">
   <meta property="og:locale" content="sv_SE">
   <meta property="product:price:amount" content="${listing.price}">
   <meta property="product:price:currency" content="SEK">

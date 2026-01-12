@@ -54,7 +54,7 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
           <div className="pr-8">
             <h3 className="font-semibold text-lg mb-2">Vi använder cookies 🍪</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              Hifihörnan använder cookies för att förbättra din upplevelse och visa relevanta annonser. 
+              Hifihörnet använder cookies för att förbättra din upplevelse och visa relevanta annonser. 
               Vi använder Google AdSense som kan samla in data för personanpassade annonser.
               Läs mer i vår{" "}
               <Link to="/cookies" className="text-primary hover:underline">

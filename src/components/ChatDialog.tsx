@@ -233,7 +233,7 @@ const ChatDialog = ({
   };
 
   // Determine display name and whether to show online status
-  const displayName = isSystemChat ? "HiFiHörnan" : sellerName;
+  const displayName = isSystemChat ? "HiFihörnet" : sellerName;
   const showOnlineStatus = !isSystemChat;
   const showListingInfo = !isSystemChat;
   const canReply = !isSystemChat;
@@ -247,7 +247,7 @@ const ChatDialog = ({
               <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0">
                 <img 
                   src={logoImage} 
-                  alt="HiFiHörnan" 
+                  alt="HiFihörnet" 
                   className="w-8 h-8 object-contain"
                 />
               </div>
@@ -291,7 +291,7 @@ const ChatDialog = ({
               {messages.map((msg) => {
                 const isOwn = msg.sender_id === user?.id && !msg.is_system_message;
                 const isSystemMessage = msg.is_system_message;
-                const senderLabel = isSystemMessage ? "HiFiHörnan" : null;
+                const senderLabel = isSystemMessage ? "HiFihörnet" : null;
                 
                 return (
                   <div
@@ -363,7 +363,7 @@ const ChatDialog = ({
         ) : (
           <div className="p-4 border-t border-border">
             <p className="text-sm text-center text-muted-foreground">
-              Detta är ett meddelande från HiFiHörnan och kan inte besvaras.
+              Detta är ett meddelande från HiFihörnet och kan inte besvaras.
             </p>
           </div>
         )}

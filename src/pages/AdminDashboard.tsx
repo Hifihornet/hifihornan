@@ -525,7 +525,7 @@ const AdminDashboard = () => {
                         Skapa nytt butikskonto
                       </DialogTitle>
                       <DialogDescription>
-                        Skapa ett konto för en butik att använda på HiFiHörnan.
+                        Skapa ett konto för en butik att använda på HiFihörnet.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -871,7 +871,7 @@ const AdminDashboard = () => {
           <DialogHeader>
             <DialogTitle>Skicka meddelande till {directMessageRecipient?.display_name || "användare"}</DialogTitle>
             <DialogDescription>
-              Detta meddelande kommer att visas som från "HiFiHörnan" i användarens inkorg.
+              Detta meddelande kommer att visas som från "HiFihörnet" i användarens inkorg.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -905,7 +905,7 @@ const AdminDashboard = () => {
               ) : (
                 <Send className="w-4 h-4" />
               )}
-              Skicka som HiFiHörnan
+              Skicka som HiFihörnet
             </Button>
           </DialogFooter>
         </DialogContent>
