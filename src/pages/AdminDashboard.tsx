@@ -12,7 +12,8 @@ import {
   Calendar,
   Eye,
   Send,
-  Megaphone
+  Megaphone,
+  Mail
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -111,9 +112,16 @@ const AdminDashboard = () => {
   const [broadcastContent, setBroadcastContent] = useState("");
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
 
+  // Direct message form state
+  const [directMessageDialogOpen, setDirectMessageDialogOpen] = useState(false);
+  const [directMessageRecipient, setDirectMessageRecipient] = useState<AdminProfile | null>(null);
+  const [directMessageContent, setDirectMessageContent] = useState("");
+  const [sendingDirectMessage, setSendingDirectMessage] = useState(false);
+
   const hasAccess = isCreator || isAdmin || isModerator;
   const canDeleteUsers = isAdmin;
   const canSendBroadcasts = isAdmin;
+  const canSendDirectMessages = isAdmin;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -188,6 +196,38 @@ const AdminDashboard = () => {
       toast.error("Kunde inte skicka meddelande");
     } finally {
       setSendingBroadcast(false);
+    }
+  };
+
+  const openDirectMessageDialog = (profile: AdminProfile) => {
+    setDirectMessageRecipient(profile);
+    setDirectMessageContent("");
+    setDirectMessageDialogOpen(true);
+  };
+
+  const handleSendDirectMessage = async () => {
+    if (!directMessageContent.trim() || !directMessageRecipient) {
+      toast.error("Skriv ett meddelande");
+      return;
+    }
+
+    setSendingDirectMessage(true);
+    try {
+      const { error } = await supabase.rpc("admin_send_message_to_user", {
+        _recipient_user_id: directMessageRecipient.user_id,
+        _content: directMessageContent.trim(),
+      });
+      if (error) throw error;
+      
+      toast.success(`Meddelande skickat till ${directMessageRecipient.display_name || "användaren"}`);
+      setDirectMessageDialogOpen(false);
+      setDirectMessageRecipient(null);
+      setDirectMessageContent("");
+    } catch (err) {
+      console.error("Error sending direct message:", err);
+      toast.error("Kunde inte skicka meddelande");
+    } finally {
+      setSendingDirectMessage(false);
     }
   };
 
@@ -582,42 +622,54 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                           </div>
-                          {canDeleteUsers && profile.user_id !== user?.id && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  disabled={deletingId === profile.user_id}
-                                >
-                                  {deletingId === profile.user_id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="w-4 h-4" />
-                                  )}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Radera användare?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Är du säker på att du vill radera "{profile.display_name || "denna användare"}"? 
-                                    Detta raderar alla deras annonser, meddelanden och all annan data. 
-                                    Detta kan inte ångras.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteUser(profile.user_id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          <div className="flex items-center gap-2">
+                            {canSendDirectMessages && profile.user_id !== user?.id && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openDirectMessageDialog(profile)}
+                                title="Skicka meddelande"
+                              >
+                                <Mail className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {canDeleteUsers && profile.user_id !== user?.id && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={deletingId === profile.user_id}
                                   >
-                                    Radera användare
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
+                                    {deletingId === profile.user_id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Radera användare?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Är du säker på att du vill radera "{profile.display_name || "denna användare"}"? 
+                                      Detta raderar alla deras annonser, meddelanden och all annan data. 
+                                      Detta kan inte ångras.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(profile.user_id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Radera användare
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -630,6 +682,52 @@ const AdminDashboard = () => {
       </main>
 
       <Footer />
+
+      {/* Direct Message Dialog */}
+      <Dialog open={directMessageDialogOpen} onOpenChange={setDirectMessageDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Skicka meddelande till {directMessageRecipient?.display_name || "användare"}</DialogTitle>
+            <DialogDescription>
+              Detta meddelande kommer att visas som från "HiFiHörnan" i användarens inkorg.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Meddelande
+              </label>
+              <Textarea
+                value={directMessageContent}
+                onChange={(e) => setDirectMessageContent(e.target.value)}
+                placeholder="Skriv ditt meddelande här..."
+                rows={5}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDirectMessageDialogOpen(false)}
+              disabled={sendingDirectMessage}
+            >
+              Avbryt
+            </Button>
+            <Button
+              variant="glow"
+              onClick={handleSendDirectMessage}
+              disabled={sendingDirectMessage || !directMessageContent.trim()}
+            >
+              {sendingDirectMessage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              Skicka som HiFiHörnan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
