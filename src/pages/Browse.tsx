@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
-import { mockListings, conditions, Listing } from "@/data/listings";
+import { conditions, Listing } from "@/data/listings";
 import { supabase } from "@/integrations/supabase/client";
 
 const Browse = () => {
@@ -107,10 +107,7 @@ const Browse = () => {
     }
   };
 
-  // Combine mock listings with database listings
-  const allListings = useMemo(() => {
-    return [...dbListings, ...mockListings];
-  }, [dbListings]);
+  const allListings = dbListings;
 
   const filteredListings = useMemo(() => {
     return allListings.filter((listing) => {
