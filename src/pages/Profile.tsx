@@ -59,13 +59,30 @@ const Profile = () => {
     if (!userId) return;
 
     try {
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+      let profileData;
+      
+      // If viewing own profile, fetch full profile data
+      // Otherwise, use public_profiles view to hide sensitive fields (phone, location for non-owners)
+      if (user?.id === userId) {
+        const { data, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
+        profileData = data;
+      } else {
+        // Use public_profiles view for other users (excludes phone, location)
+        const { data, error: profileError } = await supabase
+          .from("public_profiles")
+          .select("id, user_id, display_name, avatar_url, bio, setup_images, created_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+        profileData = data ? { ...data, location: null } : null;
+      }
       
       if (!profileData) {
         setError("Profilen kunde inte hittas");
