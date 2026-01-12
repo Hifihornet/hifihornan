@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CookieConsent from "@/components/CookieConsent";
+import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import Index from "./pages/Index";
 import Browse from "./pages/Browse";
 import ListingDetail from "./pages/ListingDetail";
@@ -19,10 +20,17 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Component to track user's online presence
+const OnlinePresenceTracker = () => {
+  useOnlinePresence();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <OnlinePresenceTracker />
         <Toaster />
         <Sonner />
         <BrowserRouter>

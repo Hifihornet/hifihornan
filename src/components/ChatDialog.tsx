@@ -6,6 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsUserOnline } from "@/hooks/useOnlinePresence";
+import OnlineIndicator from "@/components/OnlineIndicator";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -38,6 +40,7 @@ const ChatDialog = ({
   existingConversationId,
 }: ChatDialogProps) => {
   const { user } = useAuth();
+  const isSellerOnline = useIsUserOnline(sellerId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -217,9 +220,12 @@ const ChatDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] h-[600px] flex flex-col p-0">
         <DialogHeader className="p-4 pb-2 border-b border-border">
-          <DialogTitle className="text-lg font-display">
-            Chatt med {sellerName}
-          </DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle className="text-lg font-display">
+              Chatt med {sellerName}
+            </DialogTitle>
+            <OnlineIndicator isOnline={isSellerOnline} size="sm" showLabel />
+          </div>
           <p className="text-sm text-muted-foreground truncate">
             Angående: {listingTitle}
           </p>
