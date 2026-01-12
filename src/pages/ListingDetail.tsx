@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdBanner from "@/components/AdBanner";
+import ShareButtons from "@/components/ShareButtons";
 import { mockListings, categories, conditions, Listing } from "@/data/listings";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -168,8 +169,8 @@ const ListingDetail = () => {
 
       <main className="flex-1 pt-24 pb-12">
         <div className="container mx-auto px-4">
-          {/* Breadcrumb */}
-          <div className="mb-6">
+          {/* Breadcrumb and Share */}
+          <div className="flex items-center justify-between mb-6">
             <Link
               to="/browse"
               className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
@@ -177,6 +178,10 @@ const ListingDetail = () => {
               <ArrowLeft className="w-4 h-4" />
               Tillbaka till annonser
             </Link>
+            
+            {listing && (
+              <ShareButtons title={listing.title} />
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
