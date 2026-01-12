@@ -306,7 +306,7 @@ const ListingDetail = () => {
 
               {/* Ad Banner in Sidebar */}
               <div className="mt-6">
-                <AdBanner slot="1234567893" format="rectangle" />
+                <AdBanner slot="8997727388" format="rectangle" />
               </div>
             </div>
           </div>
