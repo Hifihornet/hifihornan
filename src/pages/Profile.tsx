@@ -33,6 +33,7 @@ interface Profile {
   location: string | null;
   bio: string | null;
   setup_images: string[] | null;
+  avatar_url: string | null;
   created_at: string;
 }
 
@@ -49,6 +50,7 @@ const Profile = () => {
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
   const isOwnProfile = user?.id === userId;
@@ -162,6 +164,59 @@ const Profile = () => {
       toast.error("Kunde inte spara profilen");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return;
+    
+    const file = e.target.files[0];
+    if (!file.type.startsWith("image/")) {
+      toast.error("Endast bilder är tillåtna");
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Delete old avatar if exists
+      if (profile?.avatar_url) {
+        const oldPath = profile.avatar_url.split("/avatars/")[1];
+        if (oldPath) {
+          await supabase.storage.from("avatars").remove([oldPath]);
+        }
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+      toast.success("Profilbilden har uppdaterats");
+    } catch (err) {
+      console.error("Error uploading avatar:", err);
+      toast.error("Kunde inte ladda upp profilbilden");
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
     }
   };
 
@@ -282,9 +337,35 @@ const Profile = () => {
           {/* Profile Header */}
           <div className="bg-card border border-border rounded-xl p-6 md:p-8 mb-8">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <User className="w-10 h-10 text-primary-foreground" />
+              <div className="relative group">
+                <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.display_name || "Profilbild"} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-10 h-10 text-primary-foreground" />
+                  )}
+                </div>
                 {isCreator && <CreatorBadge size="md" className="-top-1 -right-1" />}
+                {isOwnProfile && (
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadAvatar}
+                      className="hidden"
+                      disabled={uploadingAvatar}
+                    />
+                    {uploadingAvatar ? (
+                      <Loader2 className="w-6 h-6 text-white animate-spin" />
+                    ) : (
+                      <Upload className="w-6 h-6 text-white" />
+                    )}
+                  </label>
+                )}
               </div>
               
               <div className="flex-1">
