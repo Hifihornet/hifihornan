@@ -93,7 +93,7 @@ const Index = () => {
                 {listings.length} aktiva annonser
               </span>
               <span>•</span>
-              <span>Gratis att sälja</span>
+              <span>Lägg upp annonser gratis</span>
             </div>
           </div>
         </div>
