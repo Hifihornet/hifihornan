@@ -780,18 +780,8 @@ const AdminDashboard = () => {
                                     Admin
                                   </span>
                                 )}
-                                {profile.roles?.includes("creator") && (
-                                  <span className="relative inline-block">
-                                    <CreatorBadge size="sm" className="relative" />
-                                  </span>
-                                )}
                                 {profile.roles?.includes("store") && (
                                   <StoreBadge showLabel size="sm" />
-                                )}
-                                {profile.roles?.includes("moderator") && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-medium">
-                                    Mod
-                                  </span>
                                 )}
                               </Link>
                               <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
