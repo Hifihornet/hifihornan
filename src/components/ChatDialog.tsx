@@ -25,6 +25,7 @@ interface ChatDialogProps {
   listingTitle: string;
   sellerId: string;
   sellerName: string;
+  existingConversationId?: string; // When opening from Messages page
 }
 
 const ChatDialog = ({
@@ -34,6 +35,7 @@ const ChatDialog = ({
   listingTitle,
   sellerId,
   sellerName,
+  existingConversationId,
 }: ChatDialogProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -91,41 +93,47 @@ const ChatDialog = ({
     setLoading(true);
 
     try {
-      // Check if conversation exists
-      const { data: existing, error: fetchError } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("listing_id", listingId)
-        .eq("buyer_id", user.id)
-        .maybeSingle();
-
-      if (fetchError) {
-        console.error("Error fetching conversation:", fetchError);
-        toast.error("Kunde inte ladda konversation");
-        return;
-      }
-
-      let convId = existing?.id;
+      let convId = existingConversationId;
 
       if (!convId) {
-        // Create new conversation
-        const { data: newConv, error: createError } = await supabase
+        // Check if conversation exists - user could be buyer OR seller
+        const { data: existing, error: fetchError } = await supabase
           .from("conversations")
-          .insert({
-            listing_id: listingId,
-            buyer_id: user.id,
-            seller_id: sellerId,
-          })
           .select("id")
-          .single();
+          .eq("listing_id", listingId)
+          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+          .maybeSingle();
 
-        if (createError) {
-          console.error("Error creating conversation:", createError);
-          toast.error("Kunde inte skapa konversation");
+        if (fetchError) {
+          console.error("Error fetching conversation:", fetchError);
+          toast.error("Kunde inte ladda konversation");
+          setLoading(false);
           return;
         }
 
-        convId = newConv.id;
+        convId = existing?.id;
+
+        if (!convId) {
+          // Create new conversation - current user is the buyer (initiating contact)
+          const { data: newConv, error: createError } = await supabase
+            .from("conversations")
+            .insert({
+              listing_id: listingId,
+              buyer_id: user.id,
+              seller_id: sellerId,
+            })
+            .select("id")
+            .single();
+
+          if (createError) {
+            console.error("Error creating conversation:", createError);
+            toast.error("Kunde inte skapa konversation");
+            setLoading(false);
+            return;
+          }
+
+          convId = newConv.id;
+        }
       }
 
       setConversationId(convId);

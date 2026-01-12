@@ -123,7 +123,7 @@ const Messages = () => {
           return {
             ...conv,
             listing_title: listing?.title || "Annons borttagen",
-            listing_image: listing?.images?.[0] || "/placeholder.svg",
+            listing_image: listing?.images?.[0] || null,
             other_user_name: otherUserName || "Användare",
             last_message: lastMsg?.content,
             last_message_at: lastMsg?.created_at,
@@ -212,12 +212,16 @@ const Messages = () => {
                       className="w-full p-4 rounded-xl bg-card border border-border hover:border-primary/50 transition-all flex gap-4 items-start text-left"
                     >
                       {/* Listing Image */}
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-secondary shrink-0">
-                        <img
-                          src={conv.listing_image}
-                          alt={conv.listing_title}
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-secondary shrink-0 flex items-center justify-center">
+                        {conv.listing_image ? (
+                          <img
+                            src={conv.listing_image}
+                            alt={conv.listing_title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <MessageCircle className="w-6 h-6 text-muted-foreground" />
+                        )}
                       </div>
 
                       {/* Content */}
@@ -277,6 +281,7 @@ const Messages = () => {
               : selectedConversation.buyer_id
           }
           sellerName={selectedConversation.other_user_name || ""}
+          existingConversationId={selectedConversation.id}
         />
       )}
     </div>
