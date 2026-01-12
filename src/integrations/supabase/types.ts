@@ -64,6 +64,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          view_count: number
           year: string | null
         }
         Insert: {
@@ -80,6 +81,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          view_count?: number
           year?: string | null
         }
         Update: {
@@ -96,6 +98,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          view_count?: number
           year?: string | null
         }
         Relationships: []
@@ -235,6 +238,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_listing_view: {
+        Args: { listing_id: string }
+        Returns: undefined
       }
     }
     Enums: {

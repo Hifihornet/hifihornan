@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar, Eye } from "lucide-react";
 import { Listing, categories, conditions } from "@/data/listings";
 
 interface ListingCardProps {
@@ -24,10 +24,16 @@ const ListingCard = ({ listing }: ListingCardProps) => {
               {category?.icon} {category?.label}
             </span>
           </div>
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
             <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-bold">
               {condition?.label}
             </span>
+            {listing.viewCount !== undefined && listing.viewCount > 0 && (
+              <span className="glass px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                {listing.viewCount}
+              </span>
+            )}
           </div>
         </div>
 

@@ -36,6 +36,7 @@ const Index = () => {
         sellerEmail: "",
         images: item.images || [],
         createdAt: item.created_at,
+        viewCount: item.view_count,
       }));
     },
     staleTime: 0,

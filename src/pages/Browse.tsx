@@ -47,6 +47,7 @@ const Browse = () => {
             sellerEmail: "",
             images: item.images || [],
             createdAt: item.created_at,
+            viewCount: item.view_count,
           }));
           setDbListings(formattedListings);
         }
