@@ -1,17 +1,31 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Plus, Music2 } from "lucide-react";
+import { Menu, X, Plus, Music2, User, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const navLinks = [
     { href: "/", label: "Hem" },
     { href: "/browse", label: "Annonser" },
-    { href: "/create", label: "Sälj", icon: Plus },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass">
@@ -33,23 +47,55 @@ const Header = () => {
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary flex items-center gap-1.5",
+                  "text-sm font-medium transition-colors hover:text-primary",
                   location.pathname === link.href ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                {link.icon && <link.icon className="w-4 h-4" />}
                 {link.label}
               </Link>
             ))}
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/create">
-              <Button variant="glow" size="default">
-                <Plus className="w-4 h-4" />
-                Lägg upp annons
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/create">
+                  <Button variant="glow" size="default">
+                    <Plus className="w-4 h-4" />
+                    Lägg upp annons
+                  </Button>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <User className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem className="text-muted-foreground text-sm">
+                      {user.email}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logga ut
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="outline">Logga in</Button>
+                </Link>
+                <Link to="/create">
+                  <Button variant="glow" size="default">
+                    <Plus className="w-4 h-4" />
+                    Lägg upp annons
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -71,21 +117,49 @@ const Header = () => {
                   to={link.href}
                   onClick={() => setIsMenuOpen(false)}
                   className={cn(
-                    "px-4 py-2 text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
+                    "px-4 py-2 text-sm font-medium transition-colors hover:text-primary",
                     location.pathname === link.href ? "text-primary" : "text-muted-foreground"
                   )}
                 >
-                  {link.icon && <link.icon className="w-4 h-4" />}
                   {link.label}
                 </Link>
               ))}
-              <div className="px-4 pt-2">
-                <Link to="/create" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="glow" className="w-full">
-                    <Plus className="w-4 h-4" />
-                    Lägg upp annons
-                  </Button>
-                </Link>
+              <div className="px-4 pt-2 space-y-2">
+                {user ? (
+                  <>
+                    <Link to="/create" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="glow" className="w-full">
+                        <Plus className="w-4 h-4" />
+                        Lägg upp annons
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => {
+                        handleSignOut();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logga ut
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Logga in
+                      </Button>
+                    </Link>
+                    <Link to="/create" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="glow" className="w-full">
+                        <Plus className="w-4 h-4" />
+                        Lägg upp annons
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </nav>

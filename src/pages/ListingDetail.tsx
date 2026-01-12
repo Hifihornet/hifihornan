@@ -1,21 +1,101 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Calendar, Mail, Phone, User, Tag, Clock } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Mail, Phone, User, Tag, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { mockListings, categories, conditions } from "@/data/listings";
-import { useState } from "react";
+import { mockListings, categories, conditions, Listing } from "@/data/listings";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ListingDetail = () => {
   const { id } = useParams();
-  const listing = mockListings.find((l) => l.id === id);
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showContact, setShowContact] = useState(false);
   const [message, setMessage] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchListing = async () => {
+      // First check mock listings
+      const mockListing = mockListings.find((l) => l.id === id);
+      if (mockListing) {
+        setListing(mockListing);
+        setLoading(false);
+        return;
+      }
+
+      // Then check database
+      try {
+        const { data, error } = await supabase
+          .from("listings")
+          .select(`
+            id,
+            title,
+            description,
+            price,
+            category,
+            condition,
+            brand,
+            year,
+            location,
+            images,
+            created_at,
+            user_id,
+            profiles!listings_user_id_fkey (
+              display_name,
+              phone
+            )
+          `)
+          .eq("id", id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching listing:", error);
+        } else if (data) {
+          setListing({
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            price: data.price,
+            category: data.category,
+            condition: data.condition,
+            brand: data.brand,
+            year: data.year,
+            location: data.location,
+            sellerName: (data.profiles as any)?.display_name || "Säljare",
+            sellerEmail: "",
+            sellerPhone: (data.profiles as any)?.phone,
+            images: data.images || [],
+            createdAt: data.created_at,
+          });
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListing();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 pt-24 pb-12 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!listing) {
     return (
@@ -78,12 +158,36 @@ const ListingDetail = () => {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Image Gallery */}
-              <div className="aspect-[16/10] rounded-xl overflow-hidden bg-card border border-border">
-                <img
-                  src={listing.images[0]}
-                  alt={listing.title}
-                  className="w-full h-full object-cover"
-                />
+              <div className="space-y-4">
+                <div className="aspect-[16/10] rounded-xl overflow-hidden bg-card border border-border">
+                  <img
+                    src={listing.images[currentImageIndex] || "/placeholder.svg"}
+                    alt={listing.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                {listing.images.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {listing.images.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                          index === currentImageIndex
+                            ? "border-primary"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={image}
+                          alt={`${listing.title} bild ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Details */}
