@@ -1,12 +1,18 @@
 import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (
     <footer ref={ref} className="border-t border-border bg-card/50">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        {/* Newsletter Section */}
+        <div className="mb-12">
+          <NewsletterSignup />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img src={logo} alt="HiFiHörnet" className="h-12 w-auto" />
@@ -43,6 +49,32 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
           </div>
 
           <div>
+            <h4 className="font-display font-semibold text-foreground mb-4">Community</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/blogg" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Bloggen
+                </Link>
+              </li>
+              <li>
+                <Link to="/showcase" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  HiFi-Showcase
+                </Link>
+              </li>
+              <li>
+                <Link to="/favoriter" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Mina favoriter
+                </Link>
+              </li>
+              <li>
+                <Link to="/bevakningar" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Bevakningar
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
             <h4 className="font-display font-semibold text-foreground mb-4">Kategorier</h4>
             <ul className="space-y-2">
               <li>
@@ -64,17 +96,6 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
                 <Link to="/browse?category=receivers" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Receivers
                 </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-display font-semibold text-foreground mb-4">Support</h4>
-            <ul className="space-y-2">
-              <li>
-                <p className="text-sm text-muted-foreground">
-                  Vid frågor, använd vår chattbot nere till höger på sidan.
-                </p>
               </li>
             </ul>
           </div>

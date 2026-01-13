@@ -8,6 +8,8 @@ import CreatorBadge from "@/components/CreatorBadge";
 import StoreBadge from "@/components/StoreBadge";
 import OnlineIndicator from "@/components/OnlineIndicator";
 import ProfileSettingsDialog from "@/components/ProfileSettingsDialog";
+import SellerRating from "@/components/SellerRating";
+import ReviewList from "@/components/ReviewList";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
@@ -342,7 +344,7 @@ const Profile = () => {
                 {isStore && !isCreator && <StoreBadge size="md" className="-bottom-0.5 -right-0.5" />}
               </div>
               
-              <div className="flex-1">
+                <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
                     {profile.display_name || "Användare"}
@@ -355,6 +357,7 @@ const Profile = () => {
                     showLabel 
                   />
                 </div>
+                <SellerRating sellerId={userId || null} size="md" className="mb-2" />
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   {profile.location && (
                     <span className="flex items-center gap-1">
@@ -435,6 +438,7 @@ const Profile = () => {
           <Tabs defaultValue="listings" className="space-y-6">
             <TabsList className="bg-card border border-border">
               <TabsTrigger value="listings">Annonser ({listings.length})</TabsTrigger>
+              <TabsTrigger value="reviews">Omdömen</TabsTrigger>
               <TabsTrigger value="about">Om mig</TabsTrigger>
             </TabsList>
 
@@ -496,6 +500,16 @@ const Profile = () => {
                   )}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="reviews">
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h2 className="font-display text-xl font-semibold mb-4">
+                  Omdömen om {isOwnProfile ? "mig" : profile.display_name || "säljaren"}
+                </h2>
+                <SellerRating sellerId={userId || null} size="lg" className="mb-6" />
+                {userId && <ReviewList sellerId={userId} />}
+              </div>
             </TabsContent>
 
             <TabsContent value="about">

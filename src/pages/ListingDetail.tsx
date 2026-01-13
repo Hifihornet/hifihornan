@@ -5,11 +5,17 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdBanner from "@/components/AdBanner";
 import ShareButtons from "@/components/ShareButtons";
+import FavoriteButton from "@/components/FavoriteButton";
+import SellerRating from "@/components/SellerRating";
+import ReportListingDialog from "@/components/ReportListingDialog";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewList from "@/components/ReviewList";
 import { mockListings, categories, conditions, Listing } from "@/data/listings";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ChatDialog from "@/components/ChatDialog";
 import StoreBadge from "@/components/StoreBadge";
 
@@ -17,6 +23,7 @@ const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToRecentlyViewed } = useRecentlyViewed();
   const [listing, setListing] = useState<Listing | null>(null);
   const [listingStatus, setListingStatus] = useState<string>("active");
   const [sellerId, setSellerId] = useState<string | null>(null);
@@ -25,6 +32,7 @@ const ListingDetail = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [markingSold, setMarkingSold] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
   
   const isOwner = user?.id === sellerId;
   const isSold = listingStatus === "sold";
@@ -71,6 +79,11 @@ const ListingDetail = () => {
             console.error("Error incrementing view count:", rpcError);
           }
 
+          // Add to recently viewed
+          if (id) {
+            addToRecentlyViewed(id);
+          }
+
           // Store seller ID for profile link
           setSellerId(data.user_id);
           setListingStatus(data.status || "active");
@@ -114,7 +127,7 @@ const ListingDetail = () => {
     };
 
     fetchListing();
-  }, [id]);
+  }, [id, addToRecentlyViewed]);
 
   if (loading) {
     return (
@@ -232,9 +245,12 @@ const ListingDetail = () => {
               Tillbaka till annonser
             </Link>
             
-            {listing && (
-              <ShareButtons title={listing.title} listingId={id} />
-            )}
+            <div className="flex items-center gap-2">
+              {listing && (
+                <ShareButtons title={listing.title} listingId={id} />
+              )}
+              <FavoriteButton listingId={id || ""} size="md" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -323,7 +339,40 @@ const ListingDetail = () => {
                     {listing.description}
                   </p>
                 </div>
+
+                {/* Report button */}
+                {!isOwner && user && (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <ReportListingDialog listingId={id || ""} listingTitle={listing.title} />
+                  </div>
+                )}
               </div>
+
+              {/* Reviews Section */}
+              {sellerId && (
+                <div className="p-6 rounded-xl bg-card border border-border">
+                  <h3 className="font-display text-lg font-semibold mb-4">Omdömen om säljaren</h3>
+                  <SellerRating sellerId={sellerId} size="lg" className="mb-4" />
+                  
+                  {user && !isOwner && !showReviewForm && (
+                    <Button variant="outline" onClick={() => setShowReviewForm(true)} className="mb-4">
+                      Lämna omdöme
+                    </Button>
+                  )}
+                  
+                  {showReviewForm && sellerId && (
+                    <div className="mb-6">
+                      <ReviewForm 
+                        sellerId={sellerId} 
+                        listingId={id}
+                        onSuccess={() => setShowReviewForm(false)} 
+                      />
+                    </div>
+                  )}
+                  
+                  <ReviewList sellerId={sellerId} />
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -425,6 +474,7 @@ const ListingDetail = () => {
                           <StoreBadge showLabel size="sm" />
                         )}
                       </div>
+                      <SellerRating sellerId={sellerId} showCount={false} size="sm" />
                       <div className="text-sm text-muted-foreground">Visa profil →</div>
                     </div>
                   </Link>
