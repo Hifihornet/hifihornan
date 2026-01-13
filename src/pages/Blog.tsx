@@ -65,9 +65,9 @@ const Blog = () => {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="font-display text-3xl lg:text-4xl font-bold">Bloggen</h1>
+              <h1 className="font-display text-3xl lg:text-4xl font-bold">Nyheter</h1>
               <p className="text-muted-foreground">
-                Artiklar om vintage HiFi, tips och guider
+                Nyheter och artiklar om vintage HiFi
               </p>
             </div>
           </div>
