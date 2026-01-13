@@ -1158,9 +1158,9 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="flex h-[500px]">
+                  <div className="flex flex-col md:flex-row h-[500px]">
                     {/* Conversation list */}
-                    <div className="w-1/3 border-r border-border">
+                    <div className={`${selectedSupportConv ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-b md:border-b-0 md:border-r border-border ${selectedSupportConv ? '' : 'h-full'}`}>
                       <ScrollArea className="h-full">
                         {loadingSupport ? (
                           <div className="flex items-center justify-center py-20">
@@ -1221,25 +1221,33 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* Chat area */}
-                    <div className="flex-1 flex flex-col">
+                    <div className={`${selectedSupportConv ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
                       {selectedSupportConv ? (
                         <>
                           {/* Chat header */}
-                          <div className="p-3 border-b border-border flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
+                          <div className="p-2 sm:p-3 border-b border-border flex items-center justify-between gap-1 sm:gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="md:hidden shrink-0 px-2"
+                                onClick={() => setSelectedSupportConv(null)}
+                              >
+                                <ArrowLeft className="w-4 h-4" />
+                              </Button>
                               <Link
                                 to={`/profil/${selectedSupportConv.buyer_id}`}
-                                className="font-medium text-foreground hover:text-primary"
+                                className="font-medium text-foreground hover:text-primary text-sm sm:text-base truncate"
                               >
                                 {selectedSupportConv.buyer_name}
                               </Link>
                               {selectedSupportConv.status === "closed" && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                                <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 shrink-0">
                                   Stängt
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 shrink-0">
                               {selectedSupportConv.status === "closed" ? (
                                 <>
                                   <Button
@@ -1247,13 +1255,14 @@ const AdminDashboard = () => {
                                     size="sm"
                                     onClick={handleReopenSupportConversation}
                                     disabled={closingConversation}
+                                    className="text-xs sm:text-sm px-2 sm:px-3"
                                   >
                                     {closingConversation ? (
                                       <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
                                       <RotateCcw className="w-4 h-4" />
                                     )}
-                                    Öppna igen
+                                    <span className="hidden sm:inline">Öppna igen</span>
                                   </Button>
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -1261,13 +1270,14 @@ const AdminDashboard = () => {
                                         variant="destructive"
                                         size="sm"
                                         disabled={deletingConversation}
+                                        className="text-xs sm:text-sm px-2 sm:px-3"
                                       >
                                         {deletingConversation ? (
                                           <Loader2 className="w-4 h-4 animate-spin" />
                                         ) : (
                                           <Trash2 className="w-4 h-4" />
                                         )}
-                                        Radera
+                                        <span className="hidden sm:inline">Radera</span>
                                       </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
@@ -1295,13 +1305,15 @@ const AdminDashboard = () => {
                                   size="sm"
                                   onClick={handleCloseSupportConversation}
                                   disabled={closingConversation}
+                                  className="text-xs sm:text-sm px-2 sm:px-3"
                                 >
                                   {closingConversation ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                   ) : (
                                     <CheckCircle className="w-4 h-4" />
                                   )}
-                                  Stäng ärende
+                                  <span className="hidden xs:inline sm:inline">Stäng</span>
+                                  <span className="hidden sm:inline ml-1">ärende</span>
                                 </Button>
                               )}
                             </div>
