@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { MapPin, Calendar, Eye, Share2, Link as LinkIcon, Facebook } from "lucide-react";
 import { Listing, categories, conditions } from "@/data/listings";
 import StoreBadge from "./StoreBadge";
+import FavoriteButton from "./FavoriteButton";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -113,8 +114,9 @@ const ListingCard = ({ listing, isStoreAccount = false, status = "active" }: Lis
           )}
         </div>
         
-        {/* Share button */}
-        <div className="absolute bottom-3 right-3">
+        {/* Favorite and Share buttons */}
+        <div className="absolute bottom-3 right-3 flex gap-2">
+          <FavoriteButton listingId={listing.id} size="sm" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button 

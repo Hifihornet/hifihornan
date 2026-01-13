@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_id: string
+          content: string
+          cover_image: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       broadcast_messages: {
         Row: {
           content: string
@@ -69,6 +111,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
@@ -200,6 +271,30 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          email: string
+          id: string
+          is_active: boolean
+          subscribed_at: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          is_active?: boolean
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_active?: boolean
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           allow_direct_messages: boolean
@@ -209,6 +304,7 @@ export type Database = {
           display_name: string | null
           id: string
           is_searchable: boolean
+          is_verified_seller: boolean
           last_seen: string | null
           location: string | null
           phone: string | null
@@ -224,6 +320,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_searchable?: boolean
+          is_verified_seller?: boolean
           last_seen?: string | null
           location?: string | null
           phone?: string | null
@@ -239,6 +336,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_searchable?: boolean
+          is_verified_seller?: boolean
           last_seen?: string | null
           location?: string | null
           phone?: string | null
@@ -247,6 +345,265 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      promoted_listings: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          is_active: boolean
+          listing_id: string
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          listing_id: string
+          starts_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          listing_id?: string
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoted_listings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recently_viewed: {
+        Row: {
+          id: string
+          listing_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          listing_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          listing_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recently_viewed_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          listing_id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          listing_id: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating: number
+          reviewer_id: string
+          seller_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          rating?: number
+          reviewer_id?: string
+          seller_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_searches: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          keywords: string | null
+          last_notified_at: string | null
+          location: string | null
+          max_price: number | null
+          min_price: number | null
+          name: string
+          notify_email: boolean
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          keywords?: string | null
+          last_notified_at?: string | null
+          location?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          name: string
+          notify_email?: boolean
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          keywords?: string | null
+          last_notified_at?: string | null
+          location?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          name?: string
+          notify_email?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      setup_showcases: {
+        Row: {
+          created_at: string
+          description: string | null
+          equipment: string[] | null
+          id: string
+          images: string[]
+          likes_count: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          equipment?: string[] | null
+          id?: string
+          images: string[]
+          likes_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          equipment?: string[] | null
+          id?: string
+          images?: string[]
+          likes_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      showcase_likes: {
+        Row: {
+          created_at: string
+          id: string
+          showcase_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          showcase_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          showcase_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "showcase_likes_showcase_id_fkey"
+            columns: ["showcase_id"]
+            isOneToOne: false
+            referencedRelation: "setup_showcases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -349,6 +706,10 @@ export type Database = {
       }
       cleanup_old_listing_views: { Args: never; Returns: undefined }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
+      get_listing_favorites_count: {
+        Args: { _listing_id: string }
+        Returns: number
+      }
       get_profile_count: { Args: never; Returns: number }
       get_public_profile: {
         Args: { _user_id: string }
@@ -376,6 +737,13 @@ export type Database = {
         }[]
       }
       get_seller_display_name: { Args: { _user_id: string }; Returns: string }
+      get_seller_rating: {
+        Args: { _seller_id: string }
+        Returns: {
+          average_rating: number
+          review_count: number
+        }[]
+      }
       get_user_messaging_preferences: {
         Args: { _user_id: string }
         Returns: {
@@ -398,6 +766,10 @@ export type Database = {
       increment_listing_view:
         | { Args: { listing_id: string }; Returns: undefined }
         | { Args: { listing_id: string; viewer_ip?: string }; Returns: boolean }
+      is_listing_favorited: {
+        Args: { _listing_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_store_account: { Args: { _user_id: string }; Returns: boolean }
       search_profiles: {
         Args: { _search_term: string }
