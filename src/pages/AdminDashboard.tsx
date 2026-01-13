@@ -39,6 +39,7 @@ import AdminNewsletterTab from "@/components/admin/AdminNewsletterTab";
 import AdminActivityLog from "@/components/admin/AdminActivityLog";
 import AdminListingEditor from "@/components/admin/AdminListingEditor";
 import AdminSearchFilters from "@/components/admin/AdminSearchFilters";
+import AdminRoleManager from "@/components/admin/AdminRoleManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -234,6 +235,10 @@ const AdminDashboard = () => {
   const [listingFilters, setListingFilters] = useState({ search: "", status: "", category: "" });
   const [userFilters, setUserFilters] = useState({ search: "", role: "", hasListings: "" });
 
+  // Role manager state
+  const [roleManagerOpen, setRoleManagerOpen] = useState(false);
+  const [roleManagerUser, setRoleManagerUser] = useState<{ id: string; name: string; roles: string[] } | null>(null);
+
   const hasAccess = isCreator || isAdmin || isModerator;
   const canManageBlog = isAdmin || isCreator;
   const canModerateReports = isAdmin || isModerator;
@@ -242,6 +247,7 @@ const AdminDashboard = () => {
   const canSendDirectMessages = isAdmin;
   const canCreateStoreAccounts = isAdmin;
   const canViewSupport = isAdmin;
+  const canManageRoles = isAdmin;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -1432,6 +1438,24 @@ const AdminDashboard = () => {
                               {/* Action buttons - shown below user info on mobile */}
                               {profile.user_id !== user?.id && (
                                 <div className="flex items-center gap-2 mt-3">
+                                  {canManageRoles && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setRoleManagerUser({
+                                          id: profile.user_id,
+                                          name: profile.display_name || "Okänd användare",
+                                          roles: profile.roles || []
+                                        });
+                                        setRoleManagerOpen(true);
+                                      }}
+                                      className="gap-1.5"
+                                    >
+                                      <Shield className="w-4 h-4" />
+                                      <span className="hidden sm:inline">Roller</span>
+                                    </Button>
+                                  )}
                                   {canSendDirectMessages && (
                                     <Button
                                       variant="outline"
@@ -2242,6 +2266,18 @@ const AdminDashboard = () => {
         onOpenChange={setListingEditorOpen}
         onSave={fetchListings}
       />
+
+      {/* Role Manager Dialog */}
+      {roleManagerUser && (
+        <AdminRoleManager
+          userId={roleManagerUser.id}
+          userName={roleManagerUser.name}
+          currentRoles={roleManagerUser.roles}
+          open={roleManagerOpen}
+          onOpenChange={setRoleManagerOpen}
+          onRolesUpdated={fetchProfiles}
+        />
+      )}
     </div>
   );
 };
