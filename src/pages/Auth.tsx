@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -311,6 +312,7 @@ const Auth = () => {
                 {errors.password && (
                   <p className="text-destructive text-xs mt-1">{errors.password}</p>
                 )}
+                {!isLogin && <PasswordStrengthIndicator password={password} />}
               </div>
 
               {!isLogin && (
