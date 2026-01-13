@@ -1,52 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://hifihornan.se/</loc>
+    <loc>https://hifihornet.se/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/browse</loc>
+    <loc>https://hifihornet.se/browse</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/browse?category=amplifiers</loc>
+    <loc>https://hifihornet.se/browse?category=amplifiers</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/browse?category=speakers</loc>
+    <loc>https://hifihornet.se/browse?category=speakers</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/browse?category=turntables</loc>
+    <loc>https://hifihornet.se/browse?category=turntables</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/browse?category=receivers</loc>
+    <loc>https://hifihornet.se/browse?category=receivers</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/browse?category=cassette</loc>
+    <loc>https://hifihornet.se/browse?category=cassette</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/create-listing</loc>
+    <loc>https://hifihornet.se/about-us</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://hifihornet.se/create-listing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/privacy-policy</loc>
+    <loc>https://hifihornet.se/terms-of-service</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://hifihornan.se/cookie-policy</loc>
+    <loc>https://hifihornet.se/privacy-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://hifihornet.se/cookie-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
