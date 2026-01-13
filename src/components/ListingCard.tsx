@@ -13,12 +13,15 @@ import {
 interface ListingCardProps {
   listing: Listing;
   isStoreAccount?: boolean;
+  status?: string;
 }
 
-const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
+const ListingCard = ({ listing, isStoreAccount = false, status = "active" }: ListingCardProps) => {
   const navigate = useNavigate();
   const category = categories.find((c) => c.id === listing.category);
   const condition = conditions.find((c) => c.id === listing.condition);
+  const isSold = status === "sold";
+  const isHidden = status === "hidden";
   
   const listingUrl = `${window.location.origin}/listing/${listing.id}`;
 
@@ -64,14 +67,32 @@ const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
   return (
     <article 
       onClick={handleCardClick}
-      className="group bg-card rounded-xl border border-border overflow-hidden hover-lift cursor-pointer"
+      className={`group bg-card rounded-xl border border-border overflow-hidden hover-lift cursor-pointer ${isSold || isHidden ? "opacity-60" : ""}`}
     >
       <div className="aspect-[4/3] relative overflow-hidden bg-secondary">
         <img
           src={listing.images[0]}
           alt={listing.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isSold ? "grayscale" : ""}`}
         />
+        
+        {/* Sold overlay */}
+        {isSold && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-destructive/90 text-destructive-foreground px-6 py-2 rounded-lg font-bold text-lg uppercase tracking-wider transform -rotate-12 shadow-lg">
+              Såld
+            </div>
+          </div>
+        )}
+        
+        {/* Hidden overlay */}
+        {isHidden && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-muted/90 text-muted-foreground px-6 py-2 rounded-lg font-bold text-lg uppercase tracking-wider transform -rotate-12 shadow-lg">
+              Dold
+            </div>
+          </div>
+        )}
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1.5 sm:gap-2">
           <span className="glass px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium">
             {category?.icon} {category?.label}

@@ -43,13 +43,17 @@ interface Profile {
   allow_direct_messages?: boolean;
 }
 
+interface ListingWithStatus extends Listing {
+  status?: string;
+}
+
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const { isCreator, isStore } = useUserRoles(userId);
   const isUserOnline = useIsUserOnline(userId);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<ListingWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -103,16 +107,25 @@ const Profile = () => {
         }
       }
 
-      const { data: listingsData, error: listingsError } = await supabase
+      // Fetch all user listings (including sold for own profile)
+      const query = supabase
         .from("listings")
         .select("*")
         .eq("user_id", userId)
-        .eq("status", "active")
         .order("created_at", { ascending: false });
+      
+      // Show active and sold listings for own profile, only active for others
+      if (user?.id === userId) {
+        query.in("status", ["active", "sold"]);
+      } else {
+        query.eq("status", "active");
+      }
+      
+      const { data: listingsData, error: listingsError } = await query;
 
       if (listingsError) throw listingsError;
 
-      const formattedListings: Listing[] = (listingsData || []).map((item) => ({
+      const formattedListings: ListingWithStatus[] = (listingsData || []).map((item) => ({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -126,6 +139,7 @@ const Profile = () => {
         sellerEmail: "",
         images: item.images || [],
         createdAt: item.created_at,
+        status: item.status,
       }));
 
       setListings(formattedListings);
@@ -429,7 +443,7 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {listings.map((listing) => (
                     <div key={listing.id} className="relative group">
-                      <ListingCard listing={listing} />
+                      <ListingCard listing={listing} status={listing.status} />
                       {isOwnProfile && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
