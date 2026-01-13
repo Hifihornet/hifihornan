@@ -708,6 +708,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_verified_seller: boolean
           last_seen: string
           listing_count: number
           roles: string[]
@@ -733,6 +734,10 @@ export type Database = {
       admin_send_message_to_user: {
         Args: { _content: string; _recipient_user_id: string }
         Returns: string
+      }
+      admin_set_seller_verified: {
+        Args: { _user_id: string; _verified: boolean }
+        Returns: undefined
       }
       cleanup_old_listing_views: { Args: never; Returns: undefined }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
@@ -761,6 +766,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_verified_seller: boolean
           last_seen: string
           setup_images: string[]
           user_id: string

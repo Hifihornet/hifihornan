@@ -28,12 +28,14 @@ import {
   ExternalLink,
   AlertTriangle,
   Activity,
-  Pencil
+  Pencil,
+  BadgeCheck
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import StoreBadge from "@/components/StoreBadge";
 import CreatorBadge from "@/components/CreatorBadge";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import AdminStats from "@/components/admin/AdminStats";
 import AdminNewsletterTab from "@/components/admin/AdminNewsletterTab";
 import AdminActivityLog from "@/components/admin/AdminActivityLog";
@@ -92,6 +94,7 @@ interface AdminProfile {
   last_seen: string | null;
   listing_count: number;
   roles?: string[];
+  is_verified_seller?: boolean;
 }
 
 interface BroadcastMessage {
@@ -957,6 +960,26 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleToggleVerification = async (userId: string, currentlyVerified: boolean) => {
+    try {
+      const { error } = await supabase.rpc("admin_set_seller_verified", {
+        _user_id: userId,
+        _verified: !currentlyVerified,
+      });
+      if (error) throw error;
+      
+      setProfiles((prev) =>
+        prev.map((p) =>
+          p.user_id === userId ? { ...p, is_verified_seller: !currentlyVerified } : p
+        )
+      );
+      toast.success(currentlyVerified ? "Verifiering borttagen" : "Säljare verifierad!");
+    } catch (err) {
+      console.error("Error toggling verification:", err);
+      toast.error("Kunde inte ändra verifieringsstatus");
+    }
+  };
+
   if (authLoading || rolesLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -1418,7 +1441,7 @@ const AdminDashboard = () => {
                             <div className="flex-1 min-w-0">
                               <Link
                                 to={`/profil/${profile.user_id}`}
-                                className="font-medium text-foreground hover:text-primary truncate flex items-center gap-2"
+                                className="font-medium text-foreground hover:text-primary truncate flex items-center gap-2 flex-wrap"
                               >
                                 {profile.display_name || "Okänd användare"}
                                 {profile.roles?.includes("admin") && (
@@ -1428,6 +1451,9 @@ const AdminDashboard = () => {
                                 )}
                                 {profile.roles?.includes("store") && (
                                   <StoreBadge showLabel size="sm" />
+                                )}
+                                {profile.is_verified_seller && !profile.roles?.includes("store") && (
+                                  <VerifiedBadge showLabel size="sm" />
                                 )}
                               </Link>
                               <div className="flex flex-wrap items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
@@ -1461,6 +1487,19 @@ const AdminDashboard = () => {
                                     >
                                       <Shield className="w-4 h-4" />
                                       <span className="hidden sm:inline">Roller</span>
+                                    </Button>
+                                  )}
+                                  {isAdmin && !profile.roles?.includes("store") && (
+                                    <Button
+                                      variant={profile.is_verified_seller ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => handleToggleVerification(profile.user_id, !!profile.is_verified_seller)}
+                                      className={`gap-1.5 ${profile.is_verified_seller ? "bg-emerald-500 hover:bg-emerald-600" : ""}`}
+                                    >
+                                      <BadgeCheck className="w-4 h-4" />
+                                      <span className="hidden sm:inline">
+                                        {profile.is_verified_seller ? "Verifierad" : "Verifiera"}
+                                      </span>
                                     </Button>
                                   )}
                                   {canSendDirectMessages && (
