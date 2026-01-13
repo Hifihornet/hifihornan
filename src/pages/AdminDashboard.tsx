@@ -821,7 +821,7 @@ const AdminDashboard = () => {
       });
       if (error) throw error;
       
-      toast.success(`Butikskonto skapat för ${storeName}`);
+      toast.success(`Företagskonto skapat för ${storeName}`);
       setStoreDialogOpen(false);
       setStoreEmail("");
       setStorePassword("");
@@ -841,7 +841,7 @@ const AdminDashboard = () => {
       } else if (msg) {
         toast.error(msg);
       } else {
-        toast.error("Kunde inte skapa butikskonto");
+        toast.error("Kunde inte skapa företagskonto");
       }
     } finally {
       setCreatingStore(false);
@@ -1082,28 +1082,28 @@ const AdminDashboard = () => {
                     <Button variant="outline" className="gap-2">
                       <Store className="w-4 h-4" />
                       <Plus className="w-3 h-3" />
-                      Skapa butikskonto
+                      Skapa företagskonto
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Store className="w-5 h-5" />
-                        Skapa nytt butikskonto
+                        Skapa nytt företagskonto
                       </DialogTitle>
                       <DialogDescription>
-                        Skapa ett konto för en butik att använda på HiFihörnet.
+                        Skapa ett konto för ett företag att använda på HiFiHörnet.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div>
                         <label className="text-sm font-medium text-foreground mb-1.5 block">
-                          Butiksnamn
+                          Företagsnamn
                         </label>
                         <Input
                           value={storeName}
                           onChange={(e) => setStoreName(e.target.value)}
-                          placeholder="T.ex. HiFi-Butiken AB"
+                          placeholder="T.ex. HiFi-Företaget AB"
                         />
                       </div>
                       <div>
@@ -1114,7 +1114,7 @@ const AdminDashboard = () => {
                           type="email"
                           value={storeEmail}
                           onChange={(e) => setStoreEmail(e.target.value)}
-                          placeholder="butik@exempel.se"
+                          placeholder="foretag@exempel.se"
                         />
                       </div>
                       <div>
