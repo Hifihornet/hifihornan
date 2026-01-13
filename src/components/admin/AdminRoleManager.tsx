@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Shield, 
   ShieldCheck, 
@@ -108,6 +108,11 @@ const AdminRoleManager = ({
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+
+  // Sync local state with props when they change
+  useEffect(() => {
+    setRoles(currentRoles);
+  }, [currentRoles]);
 
   const availableToAdd = AVAILABLE_ROLES.filter(r => !roles.includes(r.value));
 
