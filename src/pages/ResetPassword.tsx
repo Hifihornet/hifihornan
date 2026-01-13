@@ -27,28 +27,35 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if we have a valid recovery session
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event);
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsValidSession(true);
+        setCheckingSession(false);
+      } else if (event === 'SIGNED_IN' && session) {
+        // User came from recovery link and is now signed in
+        setIsValidSession(true);
+        setCheckingSession(false);
+      }
+    });
+
+    // THEN check for existing session
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       // Check if this is a recovery session by looking at the URL hash
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const type = hashParams.get('type');
+      const accessToken = hashParams.get('access_token');
       
-      if (type === 'recovery' || session) {
+      if (type === 'recovery' || accessToken || session) {
         setIsValidSession(true);
       }
       setCheckingSession(false);
     };
     
     checkSession();
-
-    // Listen for auth state changes (recovery link clicked)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsValidSession(true);
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -85,7 +92,14 @@ const ResetPassword = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        // Handle specific Supabase error messages
+        if (error.message.includes('weak')) {
+          toast.error("Lösenordet måste vara minst 6 tecken långt");
+        } else if (error.message.includes('same')) {
+          toast.error("Det nya lösenordet kan inte vara samma som det gamla");
+        } else {
+          toast.error(error.message);
+        }
       } else {
         toast.success("Lösenordet har uppdaterats!");
         navigate("/");
