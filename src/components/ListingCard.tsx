@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { MapPin, Calendar, Eye, Share2, Link as LinkIcon, Facebook } from "lucide-react";
 import { Listing, categories, conditions } from "@/data/listings";
 import StoreBadge from "./StoreBadge";
+import VerifiedBadge from "./VerifiedBadge";
 import FavoriteButton from "./FavoriteButton";
 import { toast } from "sonner";
 import {
@@ -14,10 +15,11 @@ import {
 interface ListingCardProps {
   listing: Listing;
   isStoreAccount?: boolean;
+  isVerifiedSeller?: boolean;
   status?: string;
 }
 
-const ListingCard = ({ listing, isStoreAccount = false, status = "active" }: ListingCardProps) => {
+const ListingCard = ({ listing, isStoreAccount = false, isVerifiedSeller = false, status = "active" }: ListingCardProps) => {
   const navigate = useNavigate();
   const category = categories.find((c) => c.id === listing.category);
   const condition = conditions.find((c) => c.id === listing.condition);
@@ -94,12 +96,15 @@ const ListingCard = ({ listing, isStoreAccount = false, status = "active" }: Lis
             </div>
           </div>
         )}
-        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1.5 sm:gap-2">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1.5 sm:gap-2 flex-wrap">
           <span className="glass px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium">
             {category?.icon} {category?.label}
           </span>
           {isStoreAccount && (
             <StoreBadge showLabel size="sm" />
+          )}
+          {isVerifiedSeller && !isStoreAccount && (
+            <VerifiedBadge showLabel size="sm" />
           )}
         </div>
         <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-1.5 sm:gap-2 items-end">

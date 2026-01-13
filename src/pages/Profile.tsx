@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import CreatorBadge from "@/components/CreatorBadge";
 import StoreBadge from "@/components/StoreBadge";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import OnlineIndicator from "@/components/OnlineIndicator";
 import ProfileSettingsDialog from "@/components/ProfileSettingsDialog";
 import SellerRating from "@/components/SellerRating";
@@ -43,6 +44,7 @@ interface Profile {
   last_seen: string | null;
   is_searchable?: boolean;
   allow_direct_messages?: boolean;
+  is_verified_seller?: boolean;
 }
 
 interface ListingWithStatus extends Listing {
@@ -76,7 +78,7 @@ const Profile = () => {
       if (user?.id === userId) {
         const { data, error: profileError } = await supabase
           .from("profiles")
-          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at, last_seen, is_searchable, allow_direct_messages")
+          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at, last_seen, is_searchable, allow_direct_messages, is_verified_seller")
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -345,11 +347,14 @@ const Profile = () => {
               </div>
               
                 <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
                   <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
                     {profile.display_name || "Användare"}
                   </h1>
                   {isStore && <StoreBadge showLabel size="md" labelType="profile" />}
+                  {profile.is_verified_seller && !isStore && (
+                    <VerifiedBadge showLabel size="md" />
+                  )}
                   <OnlineIndicator 
                     isOnline={isUserOnline} 
                     lastSeen={profile.last_seen}
