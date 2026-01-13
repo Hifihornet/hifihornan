@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, MessageCircle, X, Inbox } from "lucide-react";
+import { Send, Loader2, MessageCircle, X, Inbox, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -16,6 +16,37 @@ const SupportChat = () => {
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [messageSent, setMessageSent] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [hasSeenTooltip, setHasSeenTooltip] = useState(false);
+  
+  // Dragging state
+  const [position, setPosition] = useState({ x: 24, y: 24 }); // Distance from bottom-right
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Show tooltip for new visitors after a delay
+  useEffect(() => {
+    const hasSeenBefore = localStorage.getItem("support-chat-seen");
+    if (!hasSeenBefore && !isOpen) {
+      const timer = setTimeout(() => {
+        setShowTooltip(true);
+        setHasSeenTooltip(true);
+        localStorage.setItem("support-chat-seen", "true");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  // Hide tooltip after 8 seconds
+  useEffect(() => {
+    if (showTooltip) {
+      const timer = setTimeout(() => {
+        setShowTooltip(false);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [showTooltip]);
 
   // Check for unread support messages periodically
   useEffect(() => {
@@ -25,7 +56,6 @@ const SupportChat = () => {
     }
 
     const checkUnread = async () => {
-      // Count unread messages in support conversations (listing_id is null)
       const { data: conversations } = await supabase
         .from("conversations")
         .select("id")
@@ -58,6 +88,73 @@ const SupportChat = () => {
     }
   }, [isOpen]);
 
+  // Handle dragging
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartPos.current = {
+      x: e.clientX + position.x,
+      y: e.clientY + position.y,
+    };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    dragStartPos.current = {
+      x: touch.clientX + position.x,
+      y: touch.clientY + position.y,
+    };
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newX = dragStartPos.current.x - e.clientX;
+      const newY = dragStartPos.current.y - e.clientY;
+      
+      // Constrain to viewport
+      const maxX = window.innerWidth - 80;
+      const maxY = window.innerHeight - 80;
+      
+      setPosition({
+        x: Math.min(Math.max(16, newX), maxX),
+        y: Math.min(Math.max(16, newY), maxY),
+      });
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const newX = dragStartPos.current.x - touch.clientX;
+      const newY = dragStartPos.current.y - touch.clientY;
+      
+      const maxX = window.innerWidth - 80;
+      const maxY = window.innerHeight - 80;
+      
+      setPosition({
+        x: Math.min(Math.max(16, newX), maxX),
+        y: Math.min(Math.max(16, newY), maxY),
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("touchend", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleMouseUp);
+    };
+  }, [isDragging]);
+
   const sendMessage = async () => {
     if (!user) return;
 
@@ -68,7 +165,6 @@ const SupportChat = () => {
     setNewMessage("");
 
     try {
-      // Check if support conversation exists for this user
       const { data: existing } = await supabase
         .from("conversations")
         .select("id")
@@ -79,13 +175,12 @@ const SupportChat = () => {
       let convId = existing?.id ?? null;
 
       if (!convId) {
-        // Create new support conversation
         const { data: newConv, error: createError } = await supabase
           .from("conversations")
           .insert({
             listing_id: null,
             buyer_id: user.id,
-            seller_id: user.id, // Self-reference for support chats
+            seller_id: user.id,
           })
           .select("id")
           .single();
@@ -100,7 +195,6 @@ const SupportChat = () => {
         convId = newConv.id;
       }
 
-      // Send the message
       const { error } = await supabase.from("messages").insert({
         conversation_id: convId,
         sender_id: user.id,
@@ -112,7 +206,6 @@ const SupportChat = () => {
         toast.error("Kunde inte skicka meddelande");
         setNewMessage(content);
       } else {
-        // Show success state with auto-reply
         setMessageSent(true);
       }
     } catch (error) {
@@ -137,6 +230,7 @@ const SupportChat = () => {
       navigate("/auth");
       return;
     }
+    setShowTooltip(false);
     setIsOpen(true);
   };
 
@@ -147,23 +241,77 @@ const SupportChat = () => {
 
   return (
     <>
-      {/* Floating chat button */}
-      <Button
-        onClick={handleOpen}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90"
-        size="icon"
+      {/* Floating chat button with drag handle */}
+      <div
+        className="fixed z-50 flex items-center gap-1"
+        style={{
+          right: `${position.x}px`,
+          bottom: `${position.y}px`,
+        }}
       >
-        <MessageCircle className="h-6 w-6" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
+        {/* Tooltip for new visitors */}
+        {showTooltip && !isOpen && (
+          <div className="absolute bottom-full right-0 mb-3 w-48 animate-fade-in">
+            <div className="relative bg-card border border-border rounded-lg p-3 shadow-lg">
+              <p className="text-sm text-foreground font-medium">Behöver du hjälp? 💬</p>
+              <p className="text-xs text-muted-foreground mt-1">Klicka här för att chatta med oss!</p>
+              <div className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-r border-b border-border transform rotate-45" />
+              <button
+                onClick={() => setShowTooltip(false)}
+                className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
         )}
-      </Button>
+
+        {/* Drag handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          className={`h-14 w-6 rounded-l-full bg-primary/80 hover:bg-primary flex items-center justify-center cursor-grab active:cursor-grabbing transition-all ${
+            isDragging ? "cursor-grabbing" : ""
+          }`}
+        >
+          <GripVertical className="h-4 w-4 text-primary-foreground/70" />
+        </div>
+
+        {/* Main button */}
+        <Button
+          ref={buttonRef}
+          onClick={handleOpen}
+          className={`h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 relative ${
+            !hasSeenTooltip && !isOpen ? "animate-pulse" : ""
+          }`}
+          size="icon"
+        >
+          <MessageCircle className="h-6 w-6" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium animate-pulse">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+          
+          {/* Pulsing ring effect for attention */}
+          {!hasSeenTooltip && !isOpen && (
+            <>
+              <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-30" />
+              <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" style={{ animationDelay: "0.5s" }} />
+            </>
+          )}
+        </Button>
+      </div>
 
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-48px)] h-[400px] max-h-[calc(100vh-150px)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div 
+          className="fixed z-50 w-[360px] max-w-[calc(100vw-48px)] h-[400px] max-h-[calc(100vh-150px)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
+          style={{
+            right: `${position.x}px`,
+            bottom: `${position.y + 70}px`,
+          }}
+        >
           {/* Header */}
           <div className="p-4 border-b border-border bg-card flex items-center gap-3">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0">
@@ -194,7 +342,6 @@ const SupportChat = () => {
           {/* Content */}
           <div className="flex-1 p-4 flex flex-col items-center justify-center text-center">
             {messageSent ? (
-              // Auto-reply after sending
               <div className="space-y-4">
                 <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
                   <MessageCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
@@ -221,7 +368,6 @@ const SupportChat = () => {
                 </Button>
               </div>
             ) : (
-              // Initial welcome message
               <div className="space-y-4 w-full">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                   <MessageCircle className="w-8 h-8 text-primary" />
@@ -236,7 +382,7 @@ const SupportChat = () => {
             )}
           </div>
 
-          {/* Input - only show if message hasn't been sent */}
+          {/* Input */}
           {!messageSent && (
             <div className="p-4 border-t border-border bg-card">
               <div className="flex gap-2">
