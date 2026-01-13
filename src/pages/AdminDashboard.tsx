@@ -1214,6 +1214,12 @@ const AdminDashboard = () => {
                   )}
                 </TabsTrigger>
               )}
+              {isAdmin && (
+                <TabsTrigger value="activity" className="gap-2">
+                  <Activity className="w-4 h-4" />
+                  Aktivitet
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Listings Tab */}
@@ -2045,6 +2051,20 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
+              </TabsContent>
+            )}
+
+            {/* Newsletter Tab */}
+            {isAdmin && (
+              <TabsContent value="newsletter">
+                <AdminNewsletterTab />
+              </TabsContent>
+            )}
+
+            {/* Activity Log Tab */}
+            {isAdmin && (
+              <TabsContent value="activity">
+                <AdminActivityLog />
               </TabsContent>
             )}
           </Tabs>
