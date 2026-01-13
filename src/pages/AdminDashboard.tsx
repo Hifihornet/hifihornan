@@ -40,6 +40,7 @@ import AdminActivityLog from "@/components/admin/AdminActivityLog";
 import AdminListingEditor from "@/components/admin/AdminListingEditor";
 import AdminSearchFilters from "@/components/admin/AdminSearchFilters";
 import AdminRoleManager from "@/components/admin/AdminRoleManager";
+import AdminGdprTab from "@/components/admin/AdminGdprTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1226,6 +1227,12 @@ const AdminDashboard = () => {
                   Aktivitet
                 </TabsTrigger>
               )}
+              {isAdmin && (
+                <TabsTrigger value="gdpr" className="gap-2">
+                  <Shield className="w-4 h-4" />
+                  GDPR
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Listings Tab */}
@@ -2089,6 +2096,13 @@ const AdminDashboard = () => {
             {isAdmin && (
               <TabsContent value="activity">
                 <AdminActivityLog />
+              </TabsContent>
+            )}
+
+            {/* GDPR Tab */}
+            {isAdmin && (
+              <TabsContent value="gdpr">
+                <AdminGdprTab />
               </TabsContent>
             )}
           </Tabs>
