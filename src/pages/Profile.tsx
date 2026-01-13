@@ -349,7 +349,7 @@ const Profile = () => {
                   <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
                     {profile.display_name || "Användare"}
                   </h1>
-                  {isStore && <StoreBadge showLabel size="md" />}
+                  {isStore && <StoreBadge showLabel size="md" labelType="profile" />}
                   <OnlineIndicator 
                     isOnline={isUserOnline} 
                     lastSeen={profile.last_seen}
