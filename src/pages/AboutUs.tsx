@@ -111,13 +111,7 @@ const AboutUs = () => {
                 {/* Contact */}
                 <div className="text-center pt-8 border-t border-border">
                   <p className="text-muted-foreground">
-                    Har du frågor eller förslag? Kontakta oss på{" "}
-                    <a 
-                      href="mailto:support@hifihornet.se" 
-                      className="text-primary hover:underline"
-                    >
-                      support@hifihornet.se
-                    </a>
+                    Har du frågor eller förslag? Använd vår chattbot som du hittar nere till höger på sidan.
                   </p>
                 </div>
               </div>

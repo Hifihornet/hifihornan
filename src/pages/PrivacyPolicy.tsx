@@ -95,10 +95,12 @@ const PrivacyPolicy = () => {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">7. Kontakt</h2>
+            <h2 className="text-2xl font-semibold">7. Kontakt och dina rättigheter</h2>
             <p className="text-foreground/80">
-              Om du har frågor om denna integritetspolicy eller vill utöva dina rättigheter, 
-              kontakta oss via e-post.
+              Om du har frågor om denna integritetspolicy, vill utöva dina rättigheter enligt GDPR, 
+              eller vill begära radering av din information, använd vår chattbot som du hittar nere 
+              till höger på sidan. Du kan också radera ditt konto och all tillhörande data direkt 
+              via din profilsida under inställningar.
             </p>
           </section>
         </div>
