@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import TermsOfService from "./pages/TermsOfService";
+import AboutUs from "./pages/AboutUs";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/integritetspolicy" element={<PrivacyPolicy />} />
             <Route path="/cookies" element={<CookiePolicy />} />
             <Route path="/anvandarvillkor" element={<TermsOfService />} />
+            <Route path="/om-oss" element={<AboutUs />} />
             <Route path="/profil/:userId" element={<Profile />} />
             <Route path="/meddelanden" element={<Messages />} />
             <Route path="/admin" element={<AdminDashboard />} />

@@ -34,6 +34,11 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
                   Sälj
                 </Link>
               </li>
+              <li>
+                <Link to="/om-oss" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Om oss
+                </Link>
+              </li>
             </ul>
           </div>
 
