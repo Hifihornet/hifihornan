@@ -8,7 +8,8 @@ import {
   MessageCircle,
   Flag,
   Clock,
-  BarChart3
+  BarChart3,
+  Globe
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +26,13 @@ interface StatsData {
   newsletterSubscribers: number;
   pendingReports: number;
   openSupportTickets: number;
+  siteVisits: {
+    total: number;
+    uniqueVisitors: number;
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+  };
 }
 
 const AdminStats = () => {
@@ -51,7 +59,8 @@ const AdminStats = () => {
         { count: viewsWeek },
         { count: newsletterSubscribers },
         { count: pendingReports },
-        { count: openSupportTickets }
+        { count: openSupportTickets },
+        siteVisitStats
       ] = await Promise.all([
         supabase.from("listings").select("*", { count: "exact", head: true }),
         supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "active"),
@@ -64,8 +73,17 @@ const AdminStats = () => {
         supabase.from("listing_views").select("*", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
         supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true }).eq("is_active", true),
         supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("conversations").select("*", { count: "exact", head: true }).is("listing_id", null).eq("status", "open")
+        supabase.from("conversations").select("*", { count: "exact", head: true }).is("listing_id", null).eq("status", "open"),
+        supabase.rpc("get_site_visit_stats")
       ]);
+
+      const visitData = siteVisitStats.data?.[0] || {
+        total_visits: 0,
+        unique_visitors: 0,
+        visits_today: 0,
+        visits_this_week: 0,
+        visits_this_month: 0
+      };
 
       setStats({
         totalListings: totalListings || 0,
@@ -79,7 +97,14 @@ const AdminStats = () => {
         viewsWeek: viewsWeek || 0,
         newsletterSubscribers: newsletterSubscribers || 0,
         pendingReports: pendingReports || 0,
-        openSupportTickets: openSupportTickets || 0
+        openSupportTickets: openSupportTickets || 0,
+        siteVisits: {
+          total: Number(visitData.total_visits) || 0,
+          uniqueVisitors: Number(visitData.unique_visitors) || 0,
+          today: Number(visitData.visits_today) || 0,
+          thisWeek: Number(visitData.visits_this_week) || 0,
+          thisMonth: Number(visitData.visits_this_month) || 0
+        }
       });
     } catch (err) {
       console.error("Error fetching stats:", err);
@@ -90,8 +115,8 @@ const AdminStats = () => {
 
   if (loading || !stats) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-        {[...Array(6)].map((_, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+        {[...Array(7)].map((_, i) => (
           <div key={i} className="p-4 rounded-xl bg-card border border-border animate-pulse">
             <div className="h-8 bg-muted rounded mb-2" />
             <div className="h-4 bg-muted rounded w-2/3" />
@@ -102,6 +127,13 @@ const AdminStats = () => {
   }
 
   const statCards = [
+    {
+      icon: Globe,
+      value: stats.siteVisits.total,
+      label: "Webbplatsbesök",
+      sublabel: `${stats.siteVisits.uniqueVisitors} unika, ${stats.siteVisits.thisWeek} denna vecka`,
+      color: "text-cyan-500"
+    },
     {
       icon: FileText,
       value: stats.totalListings,
@@ -147,7 +179,7 @@ const AdminStats = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
       {statCards.map((stat, index) => (
         <div 
           key={index} 
