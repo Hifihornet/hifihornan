@@ -120,7 +120,7 @@ interface AdminProfile {
   listing_count: number;
 }
 
-const SUPPORT_LISTING_ID = "00000000-0000-0000-0000-000000000000";
+// Support conversations have listing_id = null
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -259,11 +259,11 @@ const AdminDashboard = () => {
   const fetchSupportConversations = async () => {
     setLoadingSupport(true);
     try {
-      // Get all support conversations (where listing_id is the special support ID)
+      // Get all support conversations (where listing_id is null)
       const { data: conversations, error } = await supabase
         .from("conversations")
         .select("*")
-        .eq("listing_id", SUPPORT_LISTING_ID)
+        .is("listing_id", null)
         .order("updated_at", { ascending: false });
 
       if (error) throw error;

@@ -20,7 +20,7 @@ interface Message {
   is_system_message?: boolean;
 }
 
-const SUPPORT_LISTING_ID = "00000000-0000-0000-0000-000000000000";
+// Support conversations have listing_id = null
 
 const SupportChat = () => {
   const { user } = useAuth();
@@ -60,7 +60,7 @@ const SupportChat = () => {
       const { data: conversations } = await supabase
         .from("conversations")
         .select("id")
-        .eq("listing_id", SUPPORT_LISTING_ID)
+        .is("listing_id", null)
         .eq("buyer_id", user.id)
         .maybeSingle();
 
@@ -127,7 +127,7 @@ const SupportChat = () => {
       const { data: existing, error: fetchError } = await supabase
         .from("conversations")
         .select("id")
-        .eq("listing_id", SUPPORT_LISTING_ID)
+        .is("listing_id", null)
         .eq("buyer_id", user.id)
         .maybeSingle();
 
@@ -145,7 +145,7 @@ const SupportChat = () => {
         const { data: newConv, error: createError } = await supabase
           .from("conversations")
           .insert({
-            listing_id: SUPPORT_LISTING_ID,
+            listing_id: null,
             buyer_id: user.id,
             seller_id: user.id, // Self-reference for support chats
           })
