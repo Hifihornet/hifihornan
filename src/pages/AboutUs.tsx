@@ -94,7 +94,7 @@ const AboutUs = () => {
                   </p>
                   <Button asChild className="gap-2">
                     <a 
-                      href="https://gofund.me/bd2e133e" 
+                      href="https://gofund.me/f36862a1a" 
                       target="_blank" 
                       rel="noopener noreferrer"
                     >
