@@ -112,12 +112,12 @@ const Messages = () => {
           // Check if this is a system/admin conversation
           const isSystemConversation = listing?.status === "system";
 
-          // Get other user's name - for system conversations, show "HiFihörnet"
+          // Get other user's name - for system conversations, show "HiFiHörnet"
           const otherUserId = conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id;
           let otherUserName = "Användare";
           
           if (isSystemConversation) {
-            otherUserName = "HiFihörnet";
+            otherUserName = "HiFiHörnet";
           } else {
             const { data: fetchedName } = await supabase.rpc("get_seller_display_name", {
               _user_id: otherUserId,
@@ -144,7 +144,7 @@ const Messages = () => {
 
           return {
             ...conv,
-            listing_title: isSystemConversation ? "Meddelande från HiFihörnet" : (listing?.title || "Annons borttagen"),
+            listing_title: isSystemConversation ? "Meddelande från HiFiHörnet" : (listing?.title || "Annons borttagen"),
             listing_image: listing?.images?.[0] || null,
             other_user_id: otherUserId,
             other_user_name: otherUserName,
@@ -240,7 +240,7 @@ const Messages = () => {
                         {conv.is_system_conversation ? (
                           <img
                             src={logoImage}
-                            alt="HiFihörnet"
+                            alt="HiFiHörnet"
                             className="w-12 h-12 object-contain"
                           />
                         ) : conv.listing_image ? (

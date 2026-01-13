@@ -9,10 +9,10 @@ const AboutUs = () => {
   return (
     <>
       <Helmet>
-        <title>Om oss - Hifihörnan</title>
+        <title>Om oss - HiFiHörnet</title>
         <meta
           name="description"
-          content="Lär känna Hifihörnan - marknadsplatsen för HiFi-entusiaster. Läs om vår vision och hur du kan stödja projektet."
+          content="Lär känna HiFiHörnet - marknadsplatsen för HiFi-entusiaster. Läs om vår vision och hur du kan stödja projektet."
         />
       </Helmet>
       
@@ -25,7 +25,7 @@ const AboutUs = () => {
             <div className="container mx-auto px-4">
               <div className="max-w-3xl mx-auto text-center">
                 <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-6">
-                  Om Hifihörnan
+                  Om HiFiHörnet
                 </h1>
                 <p className="text-lg text-muted-foreground">
                   En mötesplats för alla som älskar klassisk HiFi-utrustning
@@ -49,7 +49,7 @@ const AboutUs = () => {
                     </h2>
                   </div>
                   <p className="text-muted-foreground leading-relaxed">
-                    Hifihörnan skapades ur en passion för klassisk HiFi-utrustning och en önskan 
+                    HiFiHörnet skapades ur en passion för klassisk HiFi-utrustning och en önskan 
                     att ge entusiaster en dedikerad plats att köpa och sälja kvalitetsutrustning. 
                     Vi tror på att bevara och sprida kärleken till analog musik och den unika 
                     ljudupplevelse som bara vintage-HiFi kan ge.
@@ -67,7 +67,7 @@ const AboutUs = () => {
                     </h2>
                   </div>
                   <p className="text-muted-foreground leading-relaxed">
-                    Hifihörnan är mer än bara en marknadsplats – det är en gemenskap av 
+                    HiFiHörnet är mer än bara en marknadsplats – det är en gemenskap av 
                     likasinnade människor som delar samma passion. Här kan du hitta allt från 
                     klassiska förstärkare och högtalare till sällsynta skivspelare och 
                     receivers. Vår plattform gör det enkelt att hitta din nästa skatt eller 
@@ -86,7 +86,7 @@ const AboutUs = () => {
                     </h2>
                   </div>
                   <p className="text-muted-foreground leading-relaxed">
-                    Hifihörnan är ett hobbyprojekt som drivs av passion och kärlek till HiFi. 
+                    HiFiHörnet är ett hobbyprojekt som drivs av passion och kärlek till HiFi. 
                     Om du gillar vad vi gör och vill hjälpa oss att fortsätta utveckla 
                     plattformen, kan du stödja oss via GoFundMe. Varje bidrag, stort som litet, 
                     hjälper oss att täcka serverkostnader och fortsätta förbättra upplevelsen 
@@ -104,7 +104,7 @@ const AboutUs = () => {
                     </a>
                   </Button>
                   <p className="text-sm text-muted-foreground">
-                    Tack för att du är en del av Hifihörnan! ❤️
+                    Tack för att du är en del av HiFiHörnet! ❤️
                   </p>
                 </div>
 
@@ -113,10 +113,10 @@ const AboutUs = () => {
                   <p className="text-muted-foreground">
                     Har du frågor eller förslag? Kontakta oss på{" "}
                     <a 
-                      href="mailto:support@hifihornan.se" 
+                      href="mailto:support@hifihornet.se" 
                       className="text-primary hover:underline"
                     >
-                      support@hifihornan.se
+                      support@hifihornet.se
                     </a>
                   </p>
                 </div>
