@@ -26,12 +26,19 @@ import {
   BookOpen,
   Edit,
   ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  Activity,
+  Pencil
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import StoreBadge from "@/components/StoreBadge";
 import CreatorBadge from "@/components/CreatorBadge";
+import AdminStats from "@/components/admin/AdminStats";
+import AdminNewsletterTab from "@/components/admin/AdminNewsletterTab";
+import AdminActivityLog from "@/components/admin/AdminActivityLog";
+import AdminListingEditor from "@/components/admin/AdminListingEditor";
+import AdminSearchFilters from "@/components/admin/AdminSearchFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -218,6 +225,14 @@ const AdminDashboard = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [resolvingReportId, setResolvingReportId] = useState<string | null>(null);
+
+  // Listing editor state
+  const [editingListingId, setEditingListingId] = useState<string | null>(null);
+  const [listingEditorOpen, setListingEditorOpen] = useState(false);
+
+  // Search/filter state
+  const [listingFilters, setListingFilters] = useState({ search: "", status: "", category: "" });
+  const [userFilters, setUserFilters] = useState({ search: "", role: "", hasListings: "" });
 
   const hasAccess = isCreator || isAdmin || isModerator;
   const canManageBlog = isAdmin || isCreator;
@@ -977,38 +992,8 @@ const AdminDashboard = () => {
             </p>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="p-6 rounded-xl bg-card border border-border">
-              <div className="flex items-center gap-3">
-                <FileText className="w-8 h-8 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{listings.length}</p>
-                  <p className="text-sm text-muted-foreground">Totalt annonser</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 rounded-xl bg-card border border-border">
-              <div className="flex items-center gap-3">
-                <Users className="w-8 h-8 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{profiles.length}</p>
-                  <p className="text-sm text-muted-foreground">Registrerade användare</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 rounded-xl bg-card border border-border">
-              <div className="flex items-center gap-3">
-                <Eye className="w-8 h-8 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {listings.filter((l) => l.status === "active").length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Aktiva annonser</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Stats - Extended Dashboard */}
+          <AdminStats />
 
           {/* Admin Actions */}
           {isAdmin && (
@@ -1195,6 +1180,12 @@ const AdminDashboard = () => {
                 <Users className="w-4 h-4" />
                 Användare
               </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="newsletter" className="gap-2">
+                  <Mail className="w-4 h-4" />
+                  Nyhetsbrev
+                </TabsTrigger>
+              )}
               {canModerateReports && (
                 <TabsTrigger value="reports" className="gap-2">
                   <Flag className="w-4 h-4" />
@@ -1294,6 +1285,18 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
+                            {/* Edit button */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingListingId(listing.id);
+                                setListingEditorOpen(true);
+                              }}
+                              title="Redigera annons"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
                             {/* Hide/Unhide button */}
                             {listing.status === "hidden" ? (
                               <Button
@@ -2211,6 +2214,14 @@ const AdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Listing Editor Dialog */}
+      <AdminListingEditor
+        listingId={editingListingId}
+        open={listingEditorOpen}
+        onOpenChange={setListingEditorOpen}
+        onSave={fetchListings}
+      />
     </div>
   );
 };
