@@ -281,24 +281,19 @@ const SupportChat = () => {
         <Button
           ref={buttonRef}
           onClick={handleOpen}
-          className={`h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 relative ${
-            !hasSeenTooltip && !isOpen ? "animate-pulse" : ""
-          }`}
+          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 relative"
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium animate-pulse">
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
           
-          {/* Pulsing ring effect for attention */}
+          {/* Subtle glow effect for attention */}
           {!hasSeenTooltip && !isOpen && (
-            <>
-              <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-30" />
-              <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" style={{ animationDelay: "0.5s" }} />
-            </>
+            <span className="absolute inset-0 rounded-full bg-primary/50 animate-pulse" style={{ animationDuration: "3s" }} />
           )}
         </Button>
       </div>
