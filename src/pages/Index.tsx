@@ -1,19 +1,24 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, Disc, Radio, Speaker, Headphones, Users, Eye } from "lucide-react";
+import { Search, ArrowRight, Disc, Radio, Speaker, Headphones, Users, Eye, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
 import AdBanner from "@/components/AdBanner";
+import NewsletterSignup from "@/components/NewsletterSignup";
 import { categories } from "@/data/listings";
 import heroImage from "@/assets/hero-hifi.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useActiveVisitors } from "@/hooks/useActiveVisitors";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { user } = useAuth();
   const activeVisitors = useActiveVisitors();
+  const { recentlyViewed } = useRecentlyViewed();
   
   const { data: listings = [] } = useQuery({
     queryKey: ["featured-listings"],
@@ -208,6 +213,43 @@ const Index = () => {
           <AdBanner slot="8997727388" format="horizontal" className="max-w-5xl mx-auto" />
         </div>
       </section>
+
+      {/* Recently Viewed Section - Only show if user has viewed listings */}
+      {user && recentlyViewed.length > 0 && (
+        <section className="py-12 sm:py-16 bg-card/30">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3 mb-8">
+              <Clock className="w-6 h-6 text-primary" />
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+                Senast visade
+              </h2>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
+              {recentlyViewed.slice(0, 6).map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/listing/${item.id}`}
+                  className="flex-shrink-0 w-48 bg-card rounded-lg border border-border overflow-hidden hover-lift"
+                >
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={item.images[0] || "/placeholder.svg"}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <h3 className="font-medium text-sm line-clamp-1">{item.title}</h3>
+                    <p className="text-primary font-bold text-sm">
+                      {item.price.toLocaleString("sv-SE")} kr
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-12 sm:py-16 lg:py-24 bg-card/50">

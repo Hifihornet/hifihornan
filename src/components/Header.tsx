@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Plus, User, LogOut, MessageCircle, Shield, Search } from "lucide-react";
+import { Menu, X, Plus, User, LogOut, MessageCircle, Shield, Search, Heart, Bell, BookOpen, Headphones } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import useUserRoles from "@/hooks/useUserRoles";
 import useUnreadMessages from "@/hooks/useUnreadMessages";
@@ -29,6 +29,8 @@ const Header = () => {
   const navLinks = [
     { href: "/", label: "Hem" },
     { href: "/browse", label: "Annonser" },
+    { href: "/blogg", label: "Blogg" },
+    { href: "/showcase", label: "Showcase" },
   ];
 
   const handleSignOut = async () => {
@@ -101,6 +103,18 @@ const Header = () => {
                             {unreadCount > 99 ? "99+" : unreadCount}
                           </span>
                         )}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/favoriter" className="cursor-pointer">
+                        <Heart className="w-4 h-4 mr-2" />
+                        Favoriter
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/bevakningar" className="cursor-pointer">
+                        <Bell className="w-4 h-4 mr-2" />
+                        Bevakningar
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -196,6 +210,18 @@ const Header = () => {
                             {unreadCount > 99 ? "99+" : unreadCount}
                           </span>
                         )}
+                      </Button>
+                    </Link>
+                    <Link to="/favoriter" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Heart className="w-4 h-4" />
+                        Favoriter
+                      </Button>
+                    </Link>
+                    <Link to="/bevakningar" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Bell className="w-4 h-4" />
+                        Bevakningar
                       </Button>
                     </Link>
                     <ProfileSearchDialog
