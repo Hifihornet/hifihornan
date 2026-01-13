@@ -30,6 +30,7 @@ export const categories = [
   { id: "receivers", label: "Receivers", icon: "📻" },
   { id: "cassette", label: "Kassettdäck", icon: "📼" },
   { id: "cd-players", label: "CD-spelare", icon: "💽" },
+  { id: "multiroom", label: "Multiroom", icon: "🏠" },
   { id: "accessories", label: "Tillbehör", icon: "🎚️" },
   { id: "other", label: "Övrigt", icon: "📦" },
 ];
