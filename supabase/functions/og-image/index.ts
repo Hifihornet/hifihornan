@@ -37,7 +37,7 @@ serve(async (req) => {
       return new Response("Listing not found", { status: 404, headers: corsHeaders });
     }
 
-    const baseUrl = "https://hifihornan.se";
+    const baseUrl = "https://hifihornet.se";
     const listingUrl = `${baseUrl}/listing/${listing.id}`;
     const imageUrl = listing.images?.[0] || `${baseUrl}/og-image.png`;
     const title = escapeHtml(listing.title);
@@ -51,7 +51,7 @@ serve(async (req) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} - Hifihörnet</title>
+  <title>${title} - HiFiHörnet</title>
   <meta name="description" content="${description}">
   
   <!-- Open Graph / Facebook -->
@@ -63,7 +63,7 @@ serve(async (req) => {
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:site_name" content="Hifihörnet">
+  <meta property="og:site_name" content="HiFiHörnet">
   <meta property="og:locale" content="sv_SE">
   <meta property="product:price:amount" content="${listing.price}">
   <meta property="product:price:currency" content="SEK">
