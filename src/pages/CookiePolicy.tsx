@@ -23,7 +23,7 @@ const CookiePolicy = () => {
 
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold">Hur vi använder cookies</h2>
-            <p className="text-foreground/80">Hifihörnet använder följande typer av cookies:</p>
+            <p className="text-foreground/80">HiFiHörnet använder följande typer av cookies:</p>
             
             <div className="bg-card/50 rounded-lg p-4 space-y-3">
               <h3 className="font-semibold text-lg">Nödvändiga cookies</h3>
