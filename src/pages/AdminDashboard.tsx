@@ -21,7 +21,12 @@ import {
   RotateCcw,
   Archive,
   EyeOff,
-  Eye as EyeIcon
+  Eye as EyeIcon,
+  Flag,
+  BookOpen,
+  Edit,
+  ExternalLink,
+  AlertTriangle
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -107,6 +112,31 @@ interface SupportMessage {
   is_system_message?: boolean;
 }
 
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  published: boolean;
+  published_at: string | null;
+  created_at: string;
+  author_id: string;
+  author_name?: string;
+}
+
+interface Report {
+  id: string;
+  listing_id: string;
+  reporter_id: string;
+  reason: string;
+  description: string | null;
+  status: string;
+  created_at: string;
+  resolved_at: string | null;
+  listing_title?: string;
+  reporter_name?: string;
+}
+
 interface AdminListing {
   id: string;
   title: string;
@@ -172,7 +202,26 @@ const AdminDashboard = () => {
   const [storeName, setStoreName] = useState("");
   const [creatingStore, setCreatingStore] = useState(false);
 
+  // Blog state
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loadingBlog, setLoadingBlog] = useState(true);
+  const [blogDialogOpen, setBlogDialogOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [blogTitle, setBlogTitle] = useState("");
+  const [blogSlug, setBlogSlug] = useState("");
+  const [blogExcerpt, setBlogExcerpt] = useState("");
+  const [blogContent, setBlogContent] = useState("");
+  const [blogPublished, setBlogPublished] = useState(false);
+  const [savingBlog, setSavingBlog] = useState(false);
+
+  // Reports state
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [resolvingReportId, setResolvingReportId] = useState<string | null>(null);
+
   const hasAccess = isCreator || isAdmin || isModerator;
+  const canManageBlog = isAdmin || isCreator;
+  const canModerateReports = isAdmin || isModerator;
   const canDeleteUsers = isAdmin;
   const canSendBroadcasts = isAdmin;
   const canSendDirectMessages = isAdmin;
@@ -200,8 +249,14 @@ const AdminDashboard = () => {
       if (canViewSupport) {
         fetchSupportConversations();
       }
+      if (canManageBlog) {
+        fetchBlogPosts();
+      }
+      if (canModerateReports) {
+        fetchReports();
+      }
     }
-  }, [hasAccess, canViewSupport]);
+  }, [hasAccess, canViewSupport, canManageBlog, canModerateReports]);
 
   // Scroll to bottom when support messages change
   useEffect(() => {
@@ -262,6 +317,213 @@ const AdminDashboard = () => {
       setBroadcasts(data || []);
     } catch (err) {
       console.error("Error fetching broadcasts:", err);
+    }
+  };
+
+  const fetchBlogPosts = async () => {
+    setLoadingBlog(true);
+    try {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .select("id, title, slug, excerpt, published, published_at, created_at, author_id")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch author names
+      const postsWithAuthors = await Promise.all(
+        (data || []).map(async (post) => {
+          const { data: authorName } = await supabase.rpc("get_seller_display_name", {
+            _user_id: post.author_id,
+          });
+          return {
+            ...post,
+            author_name: authorName || "Okänd",
+          } as BlogPost;
+        })
+      );
+
+      setBlogPosts(postsWithAuthors);
+    } catch (err) {
+      console.error("Error fetching blog posts:", err);
+      toast.error("Kunde inte hämta blogginlägg");
+    } finally {
+      setLoadingBlog(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    setLoadingReports(true);
+    try {
+      const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Enrich with listing and reporter info
+      const enrichedReports = await Promise.all(
+        (data || []).map(async (report) => {
+          const { data: listing } = await supabase
+            .from("listings")
+            .select("title")
+            .eq("id", report.listing_id)
+            .single();
+
+          const { data: reporterName } = await supabase.rpc("get_seller_display_name", {
+            _user_id: report.reporter_id,
+          });
+
+          return {
+            ...report,
+            listing_title: listing?.title || "Raderad annons",
+            reporter_name: reporterName || "Okänd",
+          } as Report;
+        })
+      );
+
+      setReports(enrichedReports);
+    } catch (err) {
+      console.error("Error fetching reports:", err);
+      toast.error("Kunde inte hämta rapporter");
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const handleOpenBlogDialog = (post?: BlogPost) => {
+    if (post) {
+      setEditingPost(post);
+      setBlogTitle(post.title);
+      setBlogSlug(post.slug);
+      setBlogExcerpt(post.excerpt || "");
+      setBlogPublished(post.published);
+      // We need to fetch the full content
+      fetchBlogContent(post.id);
+    } else {
+      setEditingPost(null);
+      setBlogTitle("");
+      setBlogSlug("");
+      setBlogExcerpt("");
+      setBlogContent("");
+      setBlogPublished(false);
+    }
+    setBlogDialogOpen(true);
+  };
+
+  const fetchBlogContent = async (postId: string) => {
+    const { data } = await supabase
+      .from("blog_posts")
+      .select("content")
+      .eq("id", postId)
+      .single();
+    setBlogContent(data?.content || "");
+  };
+
+  const handleSaveBlogPost = async () => {
+    if (!blogTitle.trim() || !blogSlug.trim() || !blogContent.trim()) {
+      toast.error("Fyll i titel, slug och innehåll");
+      return;
+    }
+
+    setSavingBlog(true);
+    try {
+      if (editingPost) {
+        const { error } = await supabase
+          .from("blog_posts")
+          .update({
+            title: blogTitle.trim(),
+            slug: blogSlug.trim(),
+            excerpt: blogExcerpt.trim() || null,
+            content: blogContent.trim(),
+            published: blogPublished,
+            published_at: blogPublished && !editingPost.published_at ? new Date().toISOString() : editingPost.published_at,
+          })
+          .eq("id", editingPost.id);
+
+        if (error) throw error;
+        toast.success("Artikeln uppdaterad");
+      } else {
+        const { error } = await supabase.from("blog_posts").insert({
+          title: blogTitle.trim(),
+          slug: blogSlug.trim(),
+          excerpt: blogExcerpt.trim() || null,
+          content: blogContent.trim(),
+          published: blogPublished,
+          published_at: blogPublished ? new Date().toISOString() : null,
+          author_id: user!.id,
+        });
+
+        if (error) throw error;
+        toast.success("Artikel skapad");
+      }
+
+      setBlogDialogOpen(false);
+      fetchBlogPosts();
+    } catch (err: any) {
+      console.error("Error saving blog post:", err);
+      if (err.code === "23505") {
+        toast.error("Slug finns redan - välj en annan");
+      } else {
+        toast.error("Kunde inte spara artikeln");
+      }
+    } finally {
+      setSavingBlog(false);
+    }
+  };
+
+  const handleDeleteBlogPost = async (postId: string) => {
+    try {
+      const { error } = await supabase.from("blog_posts").delete().eq("id", postId);
+      if (error) throw error;
+      toast.success("Artikel raderad");
+      fetchBlogPosts();
+    } catch (err) {
+      console.error("Error deleting blog post:", err);
+      toast.error("Kunde inte radera artikeln");
+    }
+  };
+
+  const handleResolveReport = async (reportId: string, action: "dismiss" | "hide_listing" | "delete_listing") => {
+    setResolvingReportId(reportId);
+    try {
+      const report = reports.find((r) => r.id === reportId);
+      if (!report) return;
+
+      // Perform action
+      if (action === "hide_listing") {
+        await supabase.from("listings").update({ status: "hidden" }).eq("id", report.listing_id);
+      } else if (action === "delete_listing") {
+        await supabase.rpc("admin_delete_listing", { _listing_id: report.listing_id });
+      }
+
+      // Update report status
+      const { error } = await supabase
+        .from("reports")
+        .update({
+          status: action === "dismiss" ? "dismissed" : "resolved",
+          resolved_at: new Date().toISOString(),
+          resolved_by: user!.id,
+        })
+        .eq("id", reportId);
+
+      if (error) throw error;
+
+      toast.success(
+        action === "dismiss"
+          ? "Rapport avvisad"
+          : action === "hide_listing"
+          ? "Annons dold och rapport löst"
+          : "Annons raderad och rapport löst"
+      );
+      fetchReports();
+      if (action !== "dismiss") fetchListings();
+    } catch (err) {
+      console.error("Error resolving report:", err);
+      toast.error("Kunde inte hantera rapporten");
+    } finally {
+      setResolvingReportId(null);
     }
   };
 
@@ -924,7 +1186,7 @@ const AdminDashboard = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="listings" className="space-y-6">
-            <TabsList className="bg-card border border-border">
+            <TabsList className="bg-card border border-border flex-wrap">
               <TabsTrigger value="listings" className="gap-2">
                 <FileText className="w-4 h-4" />
                 Annonser
@@ -933,6 +1195,23 @@ const AdminDashboard = () => {
                 <Users className="w-4 h-4" />
                 Användare
               </TabsTrigger>
+              {canModerateReports && (
+                <TabsTrigger value="reports" className="gap-2">
+                  <Flag className="w-4 h-4" />
+                  Rapporter
+                  {reports.filter((r) => r.status === "pending").length > 0 && (
+                    <span className="ml-1 h-5 min-w-[20px] rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center px-1.5">
+                      {reports.filter((r) => r.status === "pending").length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
+              {canManageBlog && (
+                <TabsTrigger value="blog" className="gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Blogg
+                </TabsTrigger>
+              )}
               {canViewSupport && (
                 <TabsTrigger value="support" className="gap-2">
                   <MessageCircle className="w-4 h-4" />
@@ -1204,6 +1483,286 @@ const AdminDashboard = () => {
                 </ScrollArea>
               </div>
             </TabsContent>
+
+            {/* Reports Tab */}
+            {canModerateReports && (
+              <TabsContent value="reports">
+                <div className="bg-card border border-border rounded-xl">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
+                    <h2 className="font-semibold text-foreground">Rapporterade annonser</h2>
+                    <Button variant="outline" size="sm" onClick={fetchReports} disabled={loadingReports}>
+                      <RefreshCw className={`w-4 h-4 ${loadingReports ? "animate-spin" : ""}`} />
+                      Uppdatera
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[500px]">
+                    {loadingReports ? (
+                      <div className="flex items-center justify-center py-20">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      </div>
+                    ) : reports.length === 0 ? (
+                      <div className="text-center py-20 text-muted-foreground">
+                        Inga rapporter
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {reports.map((report) => (
+                          <div
+                            key={report.id}
+                            className={`p-4 ${
+                              report.status === "pending"
+                                ? "bg-yellow-500/5"
+                                : report.status === "resolved"
+                                ? "bg-green-500/5"
+                                : "bg-muted/30"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <Link
+                                    to={`/listing/${report.listing_id}`}
+                                    className="font-medium text-foreground hover:text-primary"
+                                  >
+                                    {report.listing_title}
+                                  </Link>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded-full ${
+                                      report.status === "pending"
+                                        ? "bg-yellow-500/20 text-yellow-400"
+                                        : report.status === "resolved"
+                                        ? "bg-green-500/20 text-green-400"
+                                        : "bg-muted text-muted-foreground"
+                                    }`}
+                                  >
+                                    {report.status === "pending"
+                                      ? "Väntar"
+                                      : report.status === "resolved"
+                                      ? "Åtgärdad"
+                                      : "Avvisad"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                  <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                                  <span className="font-medium">
+                                    {report.reason === "fake"
+                                      ? "Falsk annons"
+                                      : report.reason === "inappropriate"
+                                      ? "Olämpligt innehåll"
+                                      : report.reason === "spam"
+                                      ? "Spam"
+                                      : report.reason === "wrong_category"
+                                      ? "Fel kategori"
+                                      : "Annat"}
+                                  </span>
+                                </div>
+                                {report.description && (
+                                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                    {report.description}
+                                  </p>
+                                )}
+                                <div className="text-xs text-muted-foreground">
+                                  Rapporterad av{" "}
+                                  <Link
+                                    to={`/profil/${report.reporter_id}`}
+                                    className="hover:text-primary"
+                                  >
+                                    {report.reporter_name}
+                                  </Link>{" "}
+                                  •{" "}
+                                  {formatDistanceToNow(new Date(report.created_at), {
+                                    addSuffix: true,
+                                    locale: sv,
+                                  })}
+                                </div>
+                              </div>
+                              {report.status === "pending" && (
+                                <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleResolveReport(report.id, "dismiss")}
+                                    disabled={resolvingReportId === report.id}
+                                  >
+                                    {resolvingReportId === report.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      "Avvisa"
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => handleResolveReport(report.id, "hide_listing")}
+                                    disabled={resolvingReportId === report.id}
+                                  >
+                                    <EyeOff className="w-4 h-4 mr-1" />
+                                    Dölj
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        disabled={resolvingReportId === report.id}
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-1" />
+                                        Radera
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Radera annons?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Är du säker på att du vill radera "{report.listing_title}"? 
+                                          Detta kan inte ångras.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() =>
+                                            handleResolveReport(report.id, "delete_listing")
+                                          }
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Radera
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+            )}
+
+            {/* Blog Tab */}
+            {canManageBlog && (
+              <TabsContent value="blog">
+                <div className="bg-card border border-border rounded-xl">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
+                    <h2 className="font-semibold text-foreground">Blogginlägg</h2>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={fetchBlogPosts} disabled={loadingBlog}>
+                        <RefreshCw className={`w-4 h-4 ${loadingBlog ? "animate-spin" : ""}`} />
+                        Uppdatera
+                      </Button>
+                      <Button variant="glow" size="sm" onClick={() => handleOpenBlogDialog()}>
+                        <Plus className="w-4 h-4" />
+                        Ny artikel
+                      </Button>
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[500px]">
+                    {loadingBlog ? (
+                      <div className="flex items-center justify-center py-20">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      </div>
+                    ) : blogPosts.length === 0 ? (
+                      <div className="text-center py-20 text-muted-foreground">
+                        <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Inga blogginlägg ännu</p>
+                        <Button
+                          variant="link"
+                          onClick={() => handleOpenBlogDialog()}
+                          className="mt-2"
+                        >
+                          Skapa din första artikel
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {blogPosts.map((post) => (
+                          <div
+                            key={post.id}
+                            className="p-4 hover:bg-secondary/30 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-foreground truncate">
+                                    {post.title}
+                                  </span>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded-full ${
+                                      post.published
+                                        ? "bg-green-500/20 text-green-400"
+                                        : "bg-yellow-500/20 text-yellow-400"
+                                    }`}
+                                  >
+                                    {post.published ? "Publicerad" : "Utkast"}
+                                  </span>
+                                </div>
+                                {post.excerpt && (
+                                  <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+                                    {post.excerpt}
+                                  </p>
+                                )}
+                                <div className="text-xs text-muted-foreground">
+                                  {post.author_name} •{" "}
+                                  {formatDistanceToNow(new Date(post.created_at), {
+                                    addSuffix: true,
+                                    locale: sv,
+                                  })}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {post.published && (
+                                  <Link to={`/blogg/${post.slug}`}>
+                                    <Button variant="ghost" size="sm">
+                                      <ExternalLink className="w-4 h-4" />
+                                    </Button>
+                                  </Link>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenBlogDialog(post)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Radera artikel?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Är du säker på att du vill radera "{post.title}"? 
+                                        Detta kan inte ångras.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteBlogPost(post.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Radera
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+            )}
 
             {/* Support Tab */}
             {canViewSupport && (
@@ -1532,6 +2091,122 @@ const AdminDashboard = () => {
                 <Send className="w-4 h-4" />
               )}
               Skicka som HiFihörnet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Blog Post Dialog */}
+      <Dialog open={blogDialogOpen} onOpenChange={setBlogDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              {editingPost ? "Redigera artikel" : "Ny artikel"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingPost
+                ? "Uppdatera artikelns innehåll och inställningar"
+                : "Skapa en ny artikel till bloggen"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Titel *
+              </label>
+              <Input
+                value={blogTitle}
+                onChange={(e) => {
+                  setBlogTitle(e.target.value);
+                  if (!editingPost) {
+                    setBlogSlug(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/[åä]/g, "a")
+                        .replace(/ö/g, "o")
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-|-$/g, "")
+                    );
+                  }
+                }}
+                placeholder="Artikelns titel"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Slug (URL) *
+              </label>
+              <Input
+                value={blogSlug}
+                onChange={(e) =>
+                  setBlogSlug(
+                    e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9-]/g, "")
+                  )
+                }
+                placeholder="artikel-slug"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Används i URL:en: /blogg/{blogSlug || "slug"}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Utdrag (valfritt)
+              </label>
+              <Textarea
+                value={blogExcerpt}
+                onChange={(e) => setBlogExcerpt(e.target.value)}
+                placeholder="Kort beskrivning som visas i listan..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Innehåll * (Markdown stöds)
+              </label>
+              <Textarea
+                value={blogContent}
+                onChange={(e) => setBlogContent(e.target.value)}
+                placeholder="Skriv artikelns innehåll här..."
+                rows={12}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="blog-published"
+                checked={blogPublished}
+                onChange={(e) => setBlogPublished(e.target.checked)}
+                className="w-4 h-4 rounded border-border"
+              />
+              <label htmlFor="blog-published" className="text-sm font-medium text-foreground">
+                Publicera artikel
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBlogDialogOpen(false)}
+              disabled={savingBlog}
+            >
+              Avbryt
+            </Button>
+            <Button
+              variant="glow"
+              onClick={handleSaveBlogPost}
+              disabled={savingBlog || !blogTitle.trim() || !blogSlug.trim() || !blogContent.trim()}
+            >
+              {savingBlog ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <BookOpen className="w-4 h-4" />
+              )}
+              {editingPost ? "Spara ändringar" : "Skapa artikel"}
             </Button>
           </DialogFooter>
         </DialogContent>
