@@ -126,20 +126,20 @@ const Browse = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-24 pb-12">
-        <div className="container mx-auto px-4">
+      <main className="flex-1 pt-20 lg:pt-24 pb-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
+          <div className="mb-6 lg:mb-10">
+            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-2 lg:mb-3">
               Alla annonser
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
               Hitta din nästa vintage-pärla bland {allListings.length} annonser
             </p>
           </div>
 
           {/* Search and Filters */}
-          <div className="mb-8 space-y-4">
+          <div className="mb-6 lg:mb-8 space-y-3 lg:space-y-4">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -147,13 +147,13 @@ const Browse = () => {
                   placeholder="Sök märke, modell eller beskrivning..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12"
+                  className="pl-12 h-11 lg:h-12 text-base"
                 />
               </div>
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="sm:w-auto"
+                className="sm:w-auto h-11 lg:h-12"
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 Filter
@@ -199,19 +199,19 @@ const Browse = () => {
           </div>
 
           {/* Results Count */}
-          <div className="mb-6">
-            <p className="text-sm text-muted-foreground">
+          <div className="mb-4 lg:mb-6">
+            <p className="text-sm lg:text-base text-muted-foreground">
               {loading ? "Laddar..." : `${filteredListings.length} annonser hittades`}
             </p>
           </div>
 
           {/* Listings Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-16 lg:py-24">
+              <Loader2 className="w-8 h-8 lg:w-10 lg:h-10 animate-spin text-primary" />
             </div>
           ) : filteredListings.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {filteredListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} isStoreAccount={listing.isStore} />
               ))}

@@ -72,20 +72,20 @@ const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
           alt={listing.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
-        <div className="absolute top-3 left-3 flex gap-2">
-          <span className="glass px-2 py-1 rounded-md text-xs font-medium">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex gap-1.5 sm:gap-2">
+          <span className="glass px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium">
             {category?.icon} {category?.label}
           </span>
           {isStoreAccount && (
             <StoreBadge showLabel size="sm" />
           )}
         </div>
-        <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-          <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-bold">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex flex-col gap-1.5 sm:gap-2 items-end">
+          <span className="bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold">
             {condition?.label}
           </span>
           {listing.viewCount !== undefined && (
-            <span className="glass px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
+            <span className="glass px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium flex items-center gap-1">
               <Eye className="w-3 h-3" />
               {listing.viewCount}
             </span>
@@ -127,14 +127,14 @@ const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-display font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+      <div className="p-3 sm:p-4 lg:p-5">
+        <div className="flex items-start justify-between gap-2 mb-1.5 sm:mb-2">
+          <h3 className="font-display text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
             {listing.title}
           </h3>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+        <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs lg:text-sm text-muted-foreground mb-2 sm:mb-3">
           <span className="flex items-center gap-1">
             <MapPin className="w-3 h-3" />
             {listing.location}
@@ -146,10 +146,10 @@ const ListingCard = ({ listing, isStoreAccount = false }: ListingCardProps) => {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-lg font-display font-bold text-gradient">
+          <span className="text-base sm:text-lg lg:text-xl font-display font-bold text-gradient">
             {listing.price.toLocaleString("sv-SE")} kr
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground">
             {listing.brand} {listing.year && `• ${listing.year}`}
           </span>
         </div>
