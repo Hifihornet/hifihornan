@@ -118,8 +118,8 @@ const SupportChat = () => {
     };
   }, [conversationId, user, isOpen]);
 
-  const fetchOrCreateConversation = async () => {
-    if (!user) return;
+  const fetchOrCreateConversation = async (): Promise<string | null> => {
+    if (!user) return null;
     setLoading(true);
 
     try {
@@ -134,11 +134,10 @@ const SupportChat = () => {
       if (fetchError) {
         console.error("Error fetching support conversation:", fetchError);
         toast.error("Kunde inte ladda supportchatt");
-        setLoading(false);
-        return;
+        return null;
       }
 
-      let convId = existing?.id;
+      let convId = existing?.id ?? null;
 
       if (!convId) {
         // Create new support conversation - seller_id is a placeholder (admin will see all)
@@ -154,9 +153,8 @@ const SupportChat = () => {
 
         if (createError) {
           console.error("Error creating support conversation:", createError);
-          toast.error("Kunde inte skapa supportchatt");
-          setLoading(false);
-          return;
+          toast.error(`Kunde inte skapa supportchatt: ${createError.message}`);
+          return null;
         }
 
         convId = newConv.id;
@@ -192,31 +190,47 @@ const SupportChat = () => {
           setUnreadCount(0);
         }
       }
+
+      return convId;
     } catch (error) {
       console.error("Error:", error);
       toast.error("Ett fel uppstod");
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !conversationId || !user) return;
+    if (!user) return;
+
+    const content = newMessage.trim();
+    if (!content) return;
+
+    // If the chat just opened, conversationId may not be ready yet.
+    let convId = conversationId;
+    if (!convId) {
+      convId = await fetchOrCreateConversation();
+    }
+
+    if (!convId) {
+      toast.error("Supportchatten laddar fortfarande – försök igen om en sekund");
+      return;
+    }
 
     setSending(true);
-    const content = newMessage.trim();
     setNewMessage("");
 
     try {
       const { error } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
+        conversation_id: convId,
         sender_id: user.id,
         content,
       });
 
       if (error) {
         console.error("Error sending message:", error);
-        toast.error("Kunde inte skicka meddelande");
+        toast.error(`Kunde inte skicka meddelande: ${error.message}`);
         setNewMessage(content);
       }
     } catch (error) {
@@ -367,7 +381,7 @@ const SupportChat = () => {
               />
               <Button
                 onClick={sendMessage}
-                disabled={!newMessage.trim() || sending}
+                disabled={!newMessage.trim() || sending || loading}
                 size="icon"
                 className="shrink-0"
               >
