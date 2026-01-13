@@ -16,10 +16,10 @@ const StoreBadge = ({ className = "", size = "sm", showLabel = false }: StoreBad
     return (
       <div
         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium shadow-sm ring-1 ring-border ${className}`}
-        title="Officiell butik"
+        title="Företagsannons"
       >
         <Store className="w-3 h-3" strokeWidth={2.5} />
-        <span>Butik</span>
+        <span>Företagsannons</span>
       </div>
     );
   }
@@ -27,7 +27,7 @@ const StoreBadge = ({ className = "", size = "sm", showLabel = false }: StoreBad
   return (
     <div
       className={`absolute flex items-center justify-center rounded-full bg-accent text-accent-foreground shadow-sm ring-1 ring-border ${sizeClasses} ${className}`}
-      title="Officiell butik"
+      title="Företagsannons"
     >
       <Store className={iconSize} strokeWidth={2.5} />
     </div>
