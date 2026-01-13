@@ -68,7 +68,7 @@ const Header = () => {
                 <Link to="/create">
                   <Button variant="glow" size="default">
                     <Plus className="w-4 h-4" />
-                    Lägg upp annons
+                    Lägg upp annons gratis
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -154,7 +154,7 @@ const Header = () => {
                 <Link to="/create">
                   <Button variant="glow" size="default">
                     <Plus className="w-4 h-4" />
-                    Lägg upp annons
+                    Lägg upp annons gratis
                   </Button>
                 </Link>
               </>
@@ -190,6 +190,12 @@ const Header = () => {
               <div className="px-4 pt-2 space-y-2">
                 {user ? (
                   <>
+                    <Link to="/create" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="glow" className="w-full">
+                        <Plus className="w-4 h-4" />
+                        Lägg upp annons gratis
+                      </Button>
+                    </Link>
                     <Link to={`/profil/${user.id}`} onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" className="w-full justify-start">
                         <span className="relative">
@@ -232,12 +238,6 @@ const Header = () => {
                         </Button>
                       }
                     />
-                    <Link to="/create" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="glow" className="w-full">
-                        <Plus className="w-4 h-4" />
-                        Lägg upp annons
-                      </Button>
-                    </Link>
                     {hasAdminAccess && (
                       <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" className="w-full justify-start">
@@ -268,7 +268,7 @@ const Header = () => {
                     <Link to="/create" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="glow" className="w-full">
                         <Plus className="w-4 h-4" />
-                        Lägg upp annons
+                        Lägg upp annons gratis
                       </Button>
                     </Link>
                   </>
