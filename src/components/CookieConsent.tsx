@@ -77,6 +77,11 @@ const CookieConsent = forwardRef<HTMLDivElement>((_, ref) => {
               >
                 Endast nödvändiga
               </Button>
+              <Link to="/cookie-installningar" onClick={handleAcceptNecessary}>
+                <Button variant="ghost" className="text-muted-foreground">
+                  Anpassa
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
