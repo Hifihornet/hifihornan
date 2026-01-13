@@ -16,7 +16,10 @@ import {
   Mail,
   Store,
   Plus,
-  MessageCircle
+  MessageCircle,
+  CheckCircle,
+  RotateCcw,
+  Archive
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -86,6 +89,7 @@ interface SupportConversation {
   id: string;
   buyer_id: string;
   updated_at: string;
+  status: string;
   buyer_name?: string;
   buyer_avatar?: string;
   last_message?: string;
@@ -136,12 +140,15 @@ const AdminDashboard = () => {
   
   // Support chat state
   const [supportConversations, setSupportConversations] = useState<SupportConversation[]>([]);
+  const [showClosedSupport, setShowClosedSupport] = useState(false);
   const [loadingSupport, setLoadingSupport] = useState(true);
   const [selectedSupportConv, setSelectedSupportConv] = useState<SupportConversation | null>(null);
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
   const [loadingSupportMessages, setLoadingSupportMessages] = useState(false);
   const [supportReply, setSupportReply] = useState("");
   const [sendingSupportReply, setSendingSupportReply] = useState(false);
+  const [closingConversation, setClosingConversation] = useState(false);
+  const [deletingConversation, setDeletingConversation] = useState(false);
   const supportMessagesEndRef = useRef<HTMLDivElement>(null);
 
   // Broadcast form state
@@ -298,6 +305,7 @@ const AdminDashboard = () => {
             id: conv.id,
             buyer_id: conv.buyer_id,
             updated_at: conv.updated_at,
+            status: conv.status || "open",
             buyer_name: profile?.display_name || "Okänd användare",
             buyer_avatar: profile?.avatar_url,
             last_message: lastMsgData?.content,
@@ -312,6 +320,70 @@ const AdminDashboard = () => {
       toast.error("Kunde inte hämta supportärenden");
     } finally {
       setLoadingSupport(false);
+    }
+  };
+
+  const handleCloseSupportConversation = async () => {
+    if (!selectedSupportConv) return;
+    
+    setClosingConversation(true);
+    try {
+      const { error } = await supabase.rpc("admin_close_support_conversation", {
+        _conversation_id: selectedSupportConv.id,
+      });
+      if (error) throw error;
+      
+      toast.success("Supportärende stängt");
+      setSelectedSupportConv(null);
+      fetchSupportConversations();
+    } catch (err) {
+      console.error("Error closing support conversation:", err);
+      toast.error("Kunde inte stänga ärendet");
+    } finally {
+      setClosingConversation(false);
+    }
+  };
+
+  const handleReopenSupportConversation = async () => {
+    if (!selectedSupportConv) return;
+    
+    setClosingConversation(true);
+    try {
+      const { error } = await supabase.rpc("admin_reopen_support_conversation", {
+        _conversation_id: selectedSupportConv.id,
+      });
+      if (error) throw error;
+      
+      toast.success("Supportärende öppnat igen");
+      fetchSupportConversations();
+      // Update local state
+      setSelectedSupportConv({ ...selectedSupportConv, status: "open" });
+    } catch (err) {
+      console.error("Error reopening support conversation:", err);
+      toast.error("Kunde inte öppna ärendet");
+    } finally {
+      setClosingConversation(false);
+    }
+  };
+
+  const handleDeleteSupportConversation = async () => {
+    if (!selectedSupportConv) return;
+    
+    setDeletingConversation(true);
+    try {
+      const { error } = await supabase.rpc("admin_delete_support_conversation", {
+        _conversation_id: selectedSupportConv.id,
+      });
+      if (error) throw error;
+      
+      toast.success("Supportärende raderat permanent");
+      setSelectedSupportConv(null);
+      fetchSupportConversations();
+    } catch (err) {
+      console.error("Error deleting support conversation:", err);
+      toast.error("Kunde inte radera ärendet");
+    } finally {
+      setDeletingConversation(false);
     }
   };
 
@@ -1068,12 +1140,22 @@ const AdminDashboard = () => {
             {canViewSupport && (
               <TabsContent value="support">
                 <div className="bg-card border border-border rounded-xl">
-                  <div className="p-4 border-b border-border flex items-center justify-between">
+                  <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
                     <h2 className="font-semibold text-foreground">Supportärenden</h2>
-                    <Button variant="outline" size="sm" onClick={fetchSupportConversations} disabled={loadingSupport}>
-                      <RefreshCw className={`w-4 h-4 ${loadingSupport ? "animate-spin" : ""}`} />
-                      Uppdatera
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={showClosedSupport ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setShowClosedSupport(!showClosedSupport)}
+                      >
+                        <Archive className="w-4 h-4" />
+                        {showClosedSupport ? "Visa öppna" : "Visa stängda"}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={fetchSupportConversations} disabled={loadingSupport}>
+                        <RefreshCw className={`w-4 h-4 ${loadingSupport ? "animate-spin" : ""}`} />
+                        Uppdatera
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="flex h-[500px]">
@@ -1084,13 +1166,15 @@ const AdminDashboard = () => {
                           <div className="flex items-center justify-center py-20">
                             <Loader2 className="w-6 h-6 animate-spin text-primary" />
                           </div>
-                        ) : supportConversations.length === 0 ? (
+                        ) : supportConversations.filter(c => showClosedSupport ? c.status === "closed" : c.status !== "closed").length === 0 ? (
                           <div className="text-center py-20 text-muted-foreground text-sm px-4">
-                            Inga supportärenden
+                            {showClosedSupport ? "Inga stängda ärenden" : "Inga öppna supportärenden"}
                           </div>
                         ) : (
                           <div className="divide-y divide-border">
-                            {supportConversations.map((conv) => (
+                            {supportConversations
+                              .filter(c => showClosedSupport ? c.status === "closed" : c.status !== "closed")
+                              .map((conv) => (
                               <button
                                 key={conv.id}
                                 onClick={() => handleSelectSupportConv(conv)}
@@ -1115,10 +1199,13 @@ const AdminDashboard = () => {
                                       <span className="font-medium text-sm truncate">
                                         {conv.buyer_name}
                                       </span>
-                                      {(conv.unread_count || 0) > 0 && (
+                                      {(conv.unread_count || 0) > 0 && conv.status !== "closed" && (
                                         <span className="h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center px-1.5">
                                           {conv.unread_count}
                                         </span>
+                                      )}
+                                      {conv.status === "closed" && (
+                                        <CheckCircle className="w-4 h-4 text-green-500" />
                                       )}
                                     </div>
                                     <p className="text-xs text-muted-foreground truncate">
@@ -1138,13 +1225,86 @@ const AdminDashboard = () => {
                       {selectedSupportConv ? (
                         <>
                           {/* Chat header */}
-                          <div className="p-3 border-b border-border flex items-center gap-2">
-                            <Link
-                              to={`/profil/${selectedSupportConv.buyer_id}`}
-                              className="font-medium text-foreground hover:text-primary"
-                            >
-                              {selectedSupportConv.buyer_name}
-                            </Link>
+                          <div className="p-3 border-b border-border flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                to={`/profil/${selectedSupportConv.buyer_id}`}
+                                className="font-medium text-foreground hover:text-primary"
+                              >
+                                {selectedSupportConv.buyer_name}
+                              </Link>
+                              {selectedSupportConv.status === "closed" && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                                  Stängt
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {selectedSupportConv.status === "closed" ? (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleReopenSupportConversation}
+                                    disabled={closingConversation}
+                                  >
+                                    {closingConversation ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <RotateCcw className="w-4 h-4" />
+                                    )}
+                                    Öppna igen
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        disabled={deletingConversation}
+                                      >
+                                        {deletingConversation ? (
+                                          <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                          <Trash2 className="w-4 h-4" />
+                                        )}
+                                        Radera
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Radera supportärende?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Detta tar bort all konversationshistorik permanent. Åtgärden kan inte ångras.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={handleDeleteSupportConversation}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Radera permanent
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCloseSupportConversation}
+                                  disabled={closingConversation}
+                                >
+                                  {closingConversation ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle className="w-4 h-4" />
+                                  )}
+                                  Stäng ärende
+                                </Button>
+                              )}
+                            </div>
                           </div>
 
                           {/* Messages */}
@@ -1197,36 +1357,42 @@ const AdminDashboard = () => {
                             )}
                           </ScrollArea>
 
-                          {/* Reply input */}
-                          <div className="p-3 border-t border-border">
-                            <div className="flex gap-2">
-                              <Textarea
-                                value={supportReply}
-                                onChange={(e) => setSupportReply(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSendSupportReply();
-                                  }
-                                }}
-                                placeholder="Skriv ett svar..."
-                                className="min-h-[44px] max-h-[100px] resize-none"
-                                rows={1}
-                              />
-                              <Button
-                                onClick={handleSendSupportReply}
-                                disabled={!supportReply.trim() || sendingSupportReply}
-                                size="icon"
-                                className="shrink-0"
-                              >
-                                {sendingSupportReply ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Send className="w-4 h-4" />
-                                )}
-                              </Button>
+                          {/* Reply input - only show for open conversations */}
+                          {selectedSupportConv.status !== "closed" ? (
+                            <div className="p-3 border-t border-border">
+                              <div className="flex gap-2">
+                                <Textarea
+                                  value={supportReply}
+                                  onChange={(e) => setSupportReply(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleSendSupportReply();
+                                    }
+                                  }}
+                                  placeholder="Skriv ett svar..."
+                                  className="min-h-[44px] max-h-[100px] resize-none"
+                                  rows={1}
+                                />
+                                <Button
+                                  onClick={handleSendSupportReply}
+                                  disabled={!supportReply.trim() || sendingSupportReply}
+                                  size="icon"
+                                  className="shrink-0"
+                                >
+                                  {sendingSupportReply ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Send className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="p-3 border-t border-border text-center text-muted-foreground text-sm">
+                              Ärendet är stängt. Öppna igen för att svara.
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">

@@ -45,6 +45,7 @@ export type Database = {
           id: string
           listing_id: string | null
           seller_id: string
+          status: string
           updated_at: string
         }
         Insert: {
@@ -53,6 +54,7 @@ export type Database = {
           id?: string
           listing_id?: string | null
           seller_id: string
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -61,6 +63,7 @@ export type Database = {
           id?: string
           listing_id?: string | null
           seller_id?: string
+          status?: string
           updated_at?: string
         }
         Relationships: [
@@ -271,12 +274,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_close_support_conversation: {
+        Args: { _conversation_id: string }
+        Returns: undefined
+      }
       admin_create_store_account: {
         Args: { _email: string; _password: string; _store_name: string }
         Returns: string
       }
       admin_delete_listing: {
         Args: { _listing_id: string }
+        Returns: undefined
+      }
+      admin_delete_support_conversation: {
+        Args: { _conversation_id: string }
         Returns: undefined
       }
       admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
@@ -315,6 +326,10 @@ export type Database = {
           roles: string[]
           user_id: string
         }[]
+      }
+      admin_reopen_support_conversation: {
+        Args: { _conversation_id: string }
+        Returns: undefined
       }
       admin_send_broadcast: {
         Args: { _content: string; _title: string }
