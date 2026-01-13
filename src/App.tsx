@@ -26,6 +26,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Showcase from "./pages/Showcase";
 import SavedSearches from "./pages/SavedSearches";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/blogg/:slug" element={<BlogPost />} />
             <Route path="/showcase" element={<Showcase />} />
             <Route path="/bevakningar" element={<SavedSearches />} />
+            <Route path="/aterstall-losenord" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
