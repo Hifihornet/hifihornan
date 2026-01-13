@@ -312,13 +312,13 @@ const SupportChat = () => {
             <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0">
               <img
                 src={logoImage}
-                alt="HiFihörnet"
+                alt="HiFiHörnet"
                 className="w-8 h-8 object-contain"
               />
             </div>
             <div className="flex-1">
               <h3 className="font-display font-semibold text-foreground">
-                HiFihörnet Support
+                HiFiHörnet Support
               </h3>
               <p className="text-xs text-muted-foreground">
                 Vi svarar så snart vi kan
