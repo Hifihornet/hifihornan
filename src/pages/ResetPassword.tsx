@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -182,6 +183,7 @@ const ResetPassword = () => {
                 {errors.password && (
                   <p className="text-destructive text-xs mt-1">{errors.password}</p>
                 )}
+                <PasswordStrengthIndicator password={password} />
               </div>
 
               <div>
