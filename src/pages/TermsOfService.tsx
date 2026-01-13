@@ -122,13 +122,7 @@ const TermsOfService = () => {
             <h2 className="text-2xl font-semibold">7. Kontakt</h2>
             <p className="text-foreground/80">
               Om du har frågor om dessa användarvillkor eller vill rapportera en annons, 
-              kontakta oss på{" "}
-              <a 
-                href="mailto:support@hifihornet.se" 
-                className="text-primary hover:underline"
-              >
-                support@hifihornet.se
-              </a>.
+              använd vår chattbot som du hittar nere till höger på sidan.
             </p>
           </section>
         </div>

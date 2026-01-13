@@ -69,15 +69,12 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-foreground mb-4">Kontakta oss</h4>
+            <h4 className="font-display font-semibold text-foreground mb-4">Support</h4>
             <ul className="space-y-2">
               <li>
-                <a 
-                  href="mailto:support@hifihornet.se" 
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  support@hifihornet.se
-                </a>
+                <p className="text-sm text-muted-foreground">
+                  Vid frågor, använd vår chattbot nere till höger på sidan.
+                </p>
               </li>
             </ul>
           </div>
