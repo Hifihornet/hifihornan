@@ -8,6 +8,7 @@ import CookieConsent from "@/components/CookieConsent";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import SupportChat from "@/components/SupportChat";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
+import { useSiteVisit } from "@/hooks/useSiteVisit";
 import Index from "./pages/Index";
 import Browse from "./pages/Browse";
 import ListingDetail from "./pages/ListingDetail";
@@ -31,9 +32,15 @@ import CookieSettings from "./pages/CookieSettings";
 
 const queryClient = new QueryClient();
 
-// Component to track user's online presence
+// Component to track user's online presence and site visits
 const OnlinePresenceTracker = () => {
   useOnlinePresence();
+  return null;
+};
+
+// Component to track site visits (needs to be inside BrowserRouter)
+const SiteVisitTracker = () => {
+  useSiteVisit();
   return null;
 };
 
@@ -45,6 +52,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <SiteVisitTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/browse" element={<Browse />} />

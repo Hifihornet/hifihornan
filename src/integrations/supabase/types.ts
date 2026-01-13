@@ -635,6 +635,30 @@ export type Database = {
           },
         ]
       }
+      site_visits: {
+        Row: {
+          id: string
+          page_path: string | null
+          visited_at: string
+          visitor_id: string | null
+          visitor_ip_hash: string | null
+        }
+        Insert: {
+          id?: string
+          page_path?: string | null
+          visited_at?: string
+          visitor_id?: string | null
+          visitor_ip_hash?: string | null
+        }
+        Update: {
+          id?: string
+          page_path?: string | null
+          visited_at?: string
+          visitor_id?: string | null
+          visitor_ip_hash?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -740,6 +764,7 @@ export type Database = {
         Returns: undefined
       }
       cleanup_old_listing_views: { Args: never; Returns: undefined }
+      cleanup_old_site_visits: { Args: never; Returns: undefined }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       get_listing_favorites_count: {
         Args: { _listing_id: string }
@@ -780,6 +805,16 @@ export type Database = {
           review_count: number
         }[]
       }
+      get_site_visit_stats: {
+        Args: never
+        Returns: {
+          total_visits: number
+          unique_visitors: number
+          visits_this_month: number
+          visits_this_week: number
+          visits_today: number
+        }[]
+      }
       get_user_messaging_preferences: {
         Args: { _user_id: string }
         Returns: {
@@ -807,6 +842,10 @@ export type Database = {
         Returns: boolean
       }
       is_store_account: { Args: { _user_id: string }; Returns: boolean }
+      record_site_visit: {
+        Args: { _page_path: string; _visitor_ip?: string }
+        Returns: boolean
+      }
       search_profiles: {
         Args: { _search_term: string }
         Returns: {
