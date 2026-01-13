@@ -105,7 +105,7 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} HiFiHörnet. Alla rättigheter förbehållna.
           </p>
-          <div className="flex gap-4 text-sm">
+          <div className="flex gap-4 text-sm flex-wrap justify-center sm:justify-end">
             <Link to="/anvandarvillkor" className="text-muted-foreground hover:text-primary transition-colors">
               Användarvillkor
             </Link>
@@ -114,6 +114,9 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
             </Link>
             <Link to="/cookies" className="text-muted-foreground hover:text-primary transition-colors">
               Cookies
+            </Link>
+            <Link to="/cookie-installningar" className="text-muted-foreground hover:text-primary transition-colors">
+              Cookie-inställningar
             </Link>
           </div>
         </div>

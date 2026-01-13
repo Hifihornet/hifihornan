@@ -92,8 +92,11 @@ const CookiePolicy = () => {
               Observera att om du inaktiverar vissa cookies kan det påverka webbplatsens funktionalitet.
             </p>
             <p className="text-foreground/80">
-              <strong>Ändra ditt cookie-val:</strong> För att ändra ditt samtycke, rensa webbplatsens 
-              data i din webbläsare så visas cookie-bannern igen vid nästa besök.
+              <strong>Ändra ditt cookie-val:</strong> Du kan när som helst ändra dina cookie-preferenser 
+              via vår{" "}
+              <a href="/cookie-installningar" className="text-primary hover:underline">
+                sida för cookie-inställningar
+              </a>.
             </p>
             <p className="text-foreground/80">
               För att välja bort personanpassade annonser från Google, besök{" "}
