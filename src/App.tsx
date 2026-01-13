@@ -27,6 +27,7 @@ import BlogPost from "./pages/BlogPost";
 import Showcase from "./pages/Showcase";
 import SavedSearches from "./pages/SavedSearches";
 import ResetPassword from "./pages/ResetPassword";
+import CookieSettings from "./pages/CookieSettings";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/showcase" element={<Showcase />} />
             <Route path="/bevakningar" element={<SavedSearches />} />
             <Route path="/aterstall-losenord" element={<ResetPassword />} />
+            <Route path="/cookie-installningar" element={<CookieSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
