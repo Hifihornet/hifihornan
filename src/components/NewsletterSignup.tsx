@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Mail, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,18 @@ const NewsletterSignup = ({ variant = "card", className }: NewsletterSignupProps
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const lastSubmitTime = useRef<number>(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Rate limiting: prevent submissions within 3 seconds
+    const now = Date.now();
+    if (now - lastSubmitTime.current < 3000) {
+      toast.error("Vänta några sekunder innan du försöker igen");
+      return;
+    }
+    lastSubmitTime.current = now;
 
     if (!email || !email.includes("@")) {
       toast.error("Ange en giltig e-postadress");
@@ -25,20 +34,21 @@ const NewsletterSignup = ({ variant = "card", className }: NewsletterSignupProps
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("newsletter_subscribers")
-        .insert({ email: email.toLowerCase().trim() });
+      // Use secure function that prevents email enumeration
+      const { data, error } = await supabase.rpc("subscribe_to_newsletter", {
+        _email: email
+      });
 
       if (error) {
-        if (error.code === "23505") {
-          toast.info("Du är redan prenumerant!");
-          setSubscribed(true);
-        } else {
-          throw error;
-        }
+        throw error;
+      }
+
+      if (data === false) {
+        toast.error("Ange en giltig e-postadress");
         return;
       }
 
+      // Always show success to prevent enumeration
       setSubscribed(true);
       toast.success("Tack för din prenumeration!");
     } catch (err) {

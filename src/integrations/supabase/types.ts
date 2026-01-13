@@ -862,6 +862,7 @@ export type Database = {
         Args: { _content: string; _recipient_user_id: string }
         Returns: string
       }
+      subscribe_to_newsletter: { Args: { _email: string }; Returns: boolean }
       update_user_last_seen: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
