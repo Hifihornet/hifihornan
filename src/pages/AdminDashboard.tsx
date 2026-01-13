@@ -19,7 +19,9 @@ import {
   MessageCircle,
   CheckCircle,
   RotateCcw,
-  Archive
+  Archive,
+  EyeOff,
+  Eye as EyeIcon
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -615,6 +617,44 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleHideListing = async (listingId: string) => {
+    try {
+      const { error } = await supabase
+        .from("listings")
+        .update({ status: "hidden" })
+        .eq("id", listingId);
+      
+      if (error) throw error;
+      
+      setListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: "hidden" } : l))
+      );
+      toast.success("Annonsen är nu dold");
+    } catch (err) {
+      console.error("Error hiding listing:", err);
+      toast.error("Kunde inte dölja annonsen");
+    }
+  };
+
+  const handleUnhideListing = async (listingId: string) => {
+    try {
+      const { error } = await supabase
+        .from("listings")
+        .update({ status: "active" })
+        .eq("id", listingId);
+      
+      if (error) throw error;
+      
+      setListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: "active" } : l))
+      );
+      toast.success("Annonsen är nu synlig igen");
+    } catch (err) {
+      console.error("Error unhiding listing:", err);
+      toast.error("Kunde inte visa annonsen");
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     setDeletingId(userId);
     try {
@@ -944,10 +984,17 @@ const AdminDashboard = () => {
                                 className={`text-xs px-2 py-0.5 rounded-full ${
                                   listing.status === "active"
                                     ? "bg-primary/20 text-primary"
+                                    : listing.status === "sold"
+                                    ? "bg-destructive/20 text-destructive"
+                                    : listing.status === "hidden"
+                                    ? "bg-muted text-muted-foreground"
                                     : "bg-muted text-muted-foreground"
                                 }`}
                               >
-                                {listing.status === "active" ? "Aktiv" : listing.status}
+                                {listing.status === "active" ? "Aktiv" : 
+                                 listing.status === "sold" ? "Såld" : 
+                                 listing.status === "hidden" ? "Dold" : 
+                                 listing.status}
                               </span>
                             </div>
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -967,7 +1014,28 @@ const AdminDashboard = () => {
                               </span>
                             </div>
                           </div>
-                          <AlertDialog>
+                          <div className="flex items-center gap-2">
+                            {/* Hide/Unhide button */}
+                            {listing.status === "hidden" ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUnhideListing(listing.id)}
+                                title="Visa annons"
+                              >
+                                <EyeIcon className="w-4 h-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleHideListing(listing.id)}
+                                title="Dölj annons"
+                              >
+                                <EyeOff className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="destructive"
@@ -999,6 +1067,7 @@ const AdminDashboard = () => {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
+                          </div>
                         </div>
                       ))}
                     </div>

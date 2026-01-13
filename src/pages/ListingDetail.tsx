@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Calendar, MessageCircle, Phone, User, Tag, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, MessageCircle, Phone, User, Tag, Clock, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -18,11 +18,16 @@ const ListingDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
+  const [listingStatus, setListingStatus] = useState<string>("active");
   const [sellerId, setSellerId] = useState<string | null>(null);
   const [isStoreAccount, setIsStoreAccount] = useState(false);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [markingSold, setMarkingSold] = useState(false);
+  
+  const isOwner = user?.id === sellerId;
+  const isSold = listingStatus === "sold";
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -51,7 +56,8 @@ const ListingDetail = () => {
             images,
             created_at,
             user_id,
-            view_count
+            view_count,
+            status
           `)
           .eq("id", id)
           .single();
@@ -67,6 +73,7 @@ const ListingDetail = () => {
 
           // Store seller ID for profile link
           setSellerId(data.user_id);
+          setListingStatus(data.status || "active");
           
           // Check if seller is a store account
           const { data: storeCheck } = await supabase.rpc('is_store_account', { _user_id: data.user_id });
@@ -163,6 +170,52 @@ const ListingDetail = () => {
     setChatOpen(true);
   };
 
+  const handleMarkAsSold = async () => {
+    if (!id || !user) return;
+    
+    setMarkingSold(true);
+    try {
+      const { error } = await supabase
+        .from("listings")
+        .update({ status: "sold" })
+        .eq("id", id)
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      
+      setListingStatus("sold");
+      toast.success("Annonsen är nu markerad som såld!");
+    } catch (err) {
+      console.error("Error marking as sold:", err);
+      toast.error("Kunde inte markera som såld");
+    } finally {
+      setMarkingSold(false);
+    }
+  };
+
+  const handleMarkAsActive = async () => {
+    if (!id || !user) return;
+    
+    setMarkingSold(true);
+    try {
+      const { error } = await supabase
+        .from("listings")
+        .update({ status: "active" })
+        .eq("id", id)
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      
+      setListingStatus("active");
+      toast.success("Annonsen är nu aktiv igen!");
+    } catch (err) {
+      console.error("Error marking as active:", err);
+      toast.error("Kunde inte aktivera annonsen");
+    } finally {
+      setMarkingSold(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -189,12 +242,21 @@ const ListingDetail = () => {
             <div className="lg:col-span-2 space-y-6">
               {/* Image Gallery */}
               <div className="space-y-4">
-                <div className="aspect-[16/10] rounded-xl overflow-hidden bg-card border border-border">
+                <div className="aspect-[16/10] rounded-xl overflow-hidden bg-card border border-border relative">
                   <img
                     src={listing.images[currentImageIndex] || "/placeholder.svg"}
                     alt={listing.title}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${isSold ? "grayscale" : ""}`}
                   />
+                  
+                  {/* Sold overlay */}
+                  {isSold && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20">
+                      <div className="bg-destructive/90 text-destructive-foreground px-8 py-3 rounded-lg font-bold text-2xl uppercase tracking-wider transform -rotate-12 shadow-lg">
+                        Såld
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {listing.images.length > 1 && (
@@ -275,23 +337,69 @@ const ListingDetail = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <Button
-                    variant="glow"
-                    size="lg"
-                    className="w-full"
-                    onClick={handleStartChat}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Skicka meddelande
-                  </Button>
+                {/* Sold badge */}
+                {isSold && (
+                  <div className="mb-6 px-4 py-3 rounded-lg bg-destructive/20 border border-destructive/30">
+                    <div className="flex items-center gap-2 text-destructive font-semibold">
+                      <CheckCircle className="w-5 h-5" />
+                      Denna produkt är såld
+                    </div>
+                  </div>
+                )}
 
-                  {listing.sellerPhone && (
+                <div className="space-y-4">
+                  {!isSold && (
+                    <Button
+                      variant="glow"
+                      size="lg"
+                      className="w-full"
+                      onClick={handleStartChat}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Skicka meddelande
+                    </Button>
+                  )}
+
+                  {listing.sellerPhone && !isSold && (
                     <Button variant="outline" size="lg" className="w-full" asChild>
                       <a href={`tel:${listing.sellerPhone.replace(/\s/g, "")}`}>
                         <Phone className="w-4 h-4" />
                         {listing.sellerPhone}
                       </a>
+                    </Button>
+                  )}
+                  
+                  {/* Owner controls */}
+                  {isOwner && !isSold && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      onClick={handleMarkAsSold}
+                      disabled={markingSold}
+                    >
+                      {markingSold ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                      Markera som såld
+                    </Button>
+                  )}
+                  
+                  {isOwner && isSold && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      onClick={handleMarkAsActive}
+                      disabled={markingSold}
+                    >
+                      {markingSold ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Återaktivera annons"
+                      )}
                     </Button>
                   )}
                 </div>
