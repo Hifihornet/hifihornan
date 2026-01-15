@@ -858,6 +858,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      create_user_profile: {
+        Args: { user_id_param: string; display_name_param: string }
+        Returns: undefined
+      }
       send_direct_message_to_user: {
         Args: { _content: string; _recipient_user_id: string }
         Returns: string

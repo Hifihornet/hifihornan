@@ -128,18 +128,12 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
-          // Create profile for new user
+          // Create profile using RPC function
           if (data?.user) {
-            const { error: profileError } = await supabase
-              .from("profiles")
-              .insert({
-                user_id: data.user.id,
-                display_name: displayName,
-                is_searchable: isSearchable,
-                allow_direct_messages: allowDirectMessages,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              });
+            const { error: profileError } = await supabase.rpc('create_user_profile', {
+              user_id_param: data.user.id,
+              display_name_param: displayName
+            });
             
             if (profileError) {
               console.error("Error creating profile:", profileError);
