@@ -116,7 +116,7 @@ const Profile = () => {
       const query = supabase
         .from("listings")
         .select("*")
-        .eq("user_id", userId)
+        .eq("seller_id", userId)
         .order("created_at", { ascending: false });
       
       // Show active and sold listings for own profile, only active for others
@@ -166,7 +166,7 @@ const Profile = () => {
         .from("listings")
         .delete()
         .eq("id", listingId)
-        .eq("user_id", user?.id);
+        .eq("seller_id", user?.id);
 
       if (error) throw error;
 
