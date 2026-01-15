@@ -77,12 +77,13 @@ const Profile = () => {
       
       if (user?.id === userId) {
         const { data, error: profileError } = await supabase
-          .rpc('get_my_profile');
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
 
         if (profileError) throw profileError;
-        
-        // Parse JSON result from RPC
-        profileData = data ? (typeof data === 'object' ? data : JSON.parse(data)) : null;
+        profileData = data;
         console.log('Profile data received:', profileData);
       } else {
         const { data, error: profileError } = await supabase
