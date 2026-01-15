@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   // Force rebuild to reload env vars
+  // Force rebuild 2
   const { user } = useAuth();
   const activeVisitors = useActiveVisitors();
   const { recentlyViewed } = useRecentlyViewed();
