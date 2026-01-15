@@ -83,6 +83,7 @@ const Profile = () => {
         
         // Parse JSON result from RPC
         profileData = data ? (typeof data === 'object' ? data : JSON.parse(data)) : null;
+        console.log('Profile data received:', profileData);
       } else {
         const { data, error: profileError } = await supabase
           .rpc('get_public_profile_by_user_id', { _user_id: userId });
