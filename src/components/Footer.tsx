@@ -1,0 +1,130 @@
+import { forwardRef } from "react";
+import { Link } from "react-router-dom";
+import logo from "@/assets/logo.png";
+import NewsletterSignup from "@/components/NewsletterSignup";
+
+const Footer = forwardRef<HTMLElement>((_, ref) => {
+  return (
+    <footer ref={ref} className="border-t border-border bg-card/50">
+      <div className="container mx-auto px-4 py-12">
+        {/* Newsletter Section */}
+        <div className="mb-12">
+          <NewsletterSignup />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          <div className="col-span-1 md:col-span-2">
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <img src={logo} alt="HiFiHörnet" className="h-12 w-auto" />
+            </Link>
+            <p className="text-muted-foreground text-sm max-w-md">
+              Webplatsen för HiFi-entusiaster. Köp och sälj HiFi-utrustning direkt mellan privatpersoner.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="font-display font-semibold text-foreground mb-4">Navigation</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Hem
+                </Link>
+              </li>
+              <li>
+                <Link to="/browse" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Annonser
+                </Link>
+              </li>
+              <li>
+                <Link to="/create" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Sälj
+                </Link>
+              </li>
+              <li>
+                <Link to="/om-oss" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Om oss
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-display font-semibold text-foreground mb-4">Community</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/blogg" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Bloggen
+                </Link>
+              </li>
+              <li>
+                <Link to="/showcase" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  HiFi-Showcase
+                </Link>
+              </li>
+              <li>
+                <Link to="/favoriter" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Mina favoriter
+                </Link>
+              </li>
+              <li>
+                <Link to="/bevakningar" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Bevakningar
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-display font-semibold text-foreground mb-4">Kategorier</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/browse?category=amplifiers" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Förstärkare
+                </Link>
+              </li>
+              <li>
+                <Link to="/browse?category=speakers" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Högtalare
+                </Link>
+              </li>
+              <li>
+                <Link to="/browse?category=turntables" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Skivspelare
+                </Link>
+              </li>
+              <li>
+                <Link to="/browse?category=receivers" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Receivers
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} HiFiHörnet. Alla rättigheter förbehållna.
+          </p>
+          <div className="flex gap-4 text-sm flex-wrap justify-center sm:justify-end">
+            <Link to="/anvandarvillkor" className="text-muted-foreground hover:text-primary transition-colors">
+              Användarvillkor
+            </Link>
+            <Link to="/integritetspolicy" className="text-muted-foreground hover:text-primary transition-colors">
+              Integritetspolicy
+            </Link>
+            <Link to="/cookies" className="text-muted-foreground hover:text-primary transition-colors">
+              Cookies
+            </Link>
+            <Link to="/cookie-installningar" className="text-muted-foreground hover:text-primary transition-colors">
+              Cookie-inställningar
+            </Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+});
+
+Footer.displayName = "Footer";
+
+export default Footer;
