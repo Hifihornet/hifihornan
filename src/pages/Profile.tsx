@@ -80,7 +80,9 @@ const Profile = () => {
           .rpc('get_my_profile');
 
         if (profileError) throw profileError;
-        profileData = data;
+        
+        // Parse JSON result from RPC
+        profileData = data ? (typeof data === 'object' ? data : JSON.parse(data)) : null;
       } else {
         const { data, error: profileError } = await supabase
           .rpc('get_public_profile_by_user_id', { _user_id: userId });
