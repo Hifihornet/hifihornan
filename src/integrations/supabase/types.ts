@@ -826,6 +826,24 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
       }
+      get_my_profile: {
+        Args: never
+        Returns: {
+          id: string
+          user_id: string
+          display_name: string | null
+          is_searchable: boolean
+          allow_direct_messages: boolean
+          avatar_url: string | null
+          bio: string | null
+          location: string | null
+          phone: string | null
+          is_verified_seller: boolean
+          last_seen: string | null
+          created_at: string
+          updated_at: string
+        } | null
+      }
       get_user_roles_public: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {

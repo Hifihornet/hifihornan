@@ -77,10 +77,7 @@ const Profile = () => {
       
       if (user?.id === userId) {
         const { data, error: profileError } = await supabase
-          .from("profiles")
-          .select("id, user_id, display_name, location, bio, setup_images, avatar_url, created_at, last_seen, is_searchable, allow_direct_messages, is_verified_seller")
-          .eq("user_id", userId)
-          .maybeSingle();
+          .rpc('get_my_profile');
 
         if (profileError) throw profileError;
         profileData = data;
