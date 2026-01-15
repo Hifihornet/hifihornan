@@ -128,18 +128,30 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
-          // Update privacy preferences after signup
+          // Create profile for new user
           if (data?.user) {
-            await supabase
+            const { error: profileError } = await supabase
               .from("profiles")
-              .update({
+              .insert({
+                user_id: data.user.id,
+                display_name: displayName,
                 is_searchable: isSearchable,
                 allow_direct_messages: allowDirectMessages,
-              })
-              .eq("user_id", data.user.id);
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            
+            if (profileError) {
+              console.error("Error creating profile:", profileError);
+              toast.error("Konto skapat men profilen kunde inte skapas. Kontakta support.");
+            } else {
+              toast.success("Konto skapat! Du är nu inloggad.");
+              navigate("/");
+            }
+          } else {
+            toast.success("Konto skapat! Du är nu inloggad.");
+            navigate("/");
           }
-          toast.success("Konto skapat! Du är nu inloggad.");
-          navigate("/");
         }
       }
     } finally {
