@@ -16,6 +16,7 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  // Force rebuild to reload env vars
   const { user } = useAuth();
   const activeVisitors = useActiveVisitors();
   const { recentlyViewed } = useRecentlyViewed();
