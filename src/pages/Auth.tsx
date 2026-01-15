@@ -120,7 +120,7 @@ const Auth = () => {
           navigate("/");
         }
       } else {
-        const { error, data } = await signUp(email, password, displayName);
+        const { error } = await signUp(email, password, displayName);
         if (error) {
           if (error.message.includes("already registered")) {
             toast.error("E-postadressen är redan registrerad");
@@ -128,24 +128,8 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
-          // Create profile using RPC function
-          if (data?.user) {
-            const { error: profileError } = await supabase.rpc('create_user_profile', {
-              user_id_param: data.user.id,
-              display_name_param: displayName
-            });
-            
-            if (profileError) {
-              console.error("Error creating profile:", profileError);
-              toast.error("Konto skapat men profilen kunde inte skapas. Kontakta support.");
-            } else {
-              toast.success("Konto skapat! Du är nu inloggad.");
-              navigate("/");
-            }
-          } else {
-            toast.success("Konto skapat! Du är nu inloggad.");
-            navigate("/");
-          }
+          toast.success("Konto skapat!");
+          navigate("/");
         }
       }
     } finally {
