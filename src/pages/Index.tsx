@@ -81,7 +81,7 @@ const Index = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-2xl lg:max-w-4xl">
             <span className="inline-block text-primary font-medium text-xs sm:text-sm lg:text-base uppercase tracking-wider mb-3 lg:mb-5 animate-fade-in-up">
-              Sveriges marknadsplats för vintage audio
+              Din webplats för HiFi-Utrustning
             </span>
             <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground mb-4 lg:mb-8 animate-fade-in-up delay-100">
               Hitta din nästa{" "}
