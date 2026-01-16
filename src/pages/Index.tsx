@@ -11,23 +11,23 @@ import { categories } from "@/data/listings";
 import heroImage from "@/assets/hero-hifi.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useActiveVisitors } from "@/hooks/useActiveVisitors";
-import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+// import { useActiveVisitors } from "@/hooks/useActiveVisitors";
+// import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   // Force rebuild to reload env vars
   // Force rebuild 2
   const { user } = useAuth();
-  const activeVisitors = useActiveVisitors();
-  const { recentlyViewed } = useRecentlyViewed();
+  // const activeVisitors = useActiveVisitors();
+  // const { recentlyViewed } = useRecentlyViewed();
   
   const { data: listings = [] } = useQuery({
     queryKey: ["featured-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("*")
+        .select("id, title, description, price, images, created_at, user_id, status")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(6);
@@ -38,31 +38,24 @@ const Index = () => {
         title: item.title,
         description: item.description,
         price: item.price,
-        category: item.category,
-        condition: item.condition,
-        brand: item.brand,
-        year: item.year,
-        location: item.location,
-        sellerName: "Säljare",
-        sellerEmail: "",
         images: item.images || [],
         createdAt: item.created_at,
-        viewCount: item.view_count,
       }));
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 10000, // 10 sekunder cache
+    refetchOnWindowFocus: false, // Inte vid fokus
   });
 
   const { data: profileCount = 0 } = useQuery({
     queryKey: ["profile-count"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_profile_count");
-      
-      if (error) throw error;
-      return data || 0;
+      // const { data, error } = await supabase.rpc("get_profile_count");
+      // if (error) throw error;
+      // return data || 0;
+      return 0; // Temporarily hardcoded
     },
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 30000, // 30 sekunder cache
+    refetchOnWindowFocus: false,
   });
 
   const featuredListings = listings;
@@ -120,18 +113,6 @@ const Index = () => {
                 <Users className="w-4 h-4 lg:w-5 lg:h-5" />
                 {profileCount} registrerade medlemmar
               </span>
-              {activeVisitors > 0 && (
-                <>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="flex items-center gap-2">
-                    <span className="relative flex h-2 w-2 lg:h-2.5 lg:w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 lg:h-2.5 lg:w-2.5 bg-green-500"></span>
-                    </span>
-                    <span className="text-green-500 font-medium">{activeVisitors}</span> inne just nu
-                  </span>
-                </>
-              )}
             </div>
           </div>
         </div>
@@ -217,29 +198,14 @@ const Index = () => {
       </section>
 
       {/* Recently Viewed Section - Only show if user has viewed listings */}
-      {user && recentlyViewed.length > 0 && (
-        <section className="py-12 sm:py-16 bg-card/30">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 mb-8">
-              <Clock className="w-6 h-6 text-primary" />
-              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                Senast visade
-              </h2>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
-              {recentlyViewed.slice(0, 6).map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/listing/${item.id}`}
-                  className="flex-shrink-0 w-48 bg-card rounded-lg border border-border overflow-hidden hover-lift"
-                >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={item.images[0] || "/placeholder.svg"}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+      {/* user && recentlyViewed.length > 0 && ( */}
+      {/* <section className="py-12 sm:py-16 bg-card/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3 mb-8">
+            <Clock className="w-6 h-6 text-primary" />
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+              Senast visade
+            </h2>
                   <div className="p-3">
                     <h3 className="font-medium text-sm line-clamp-1">{item.title}</h3>
                     <p className="text-primary font-bold text-sm">

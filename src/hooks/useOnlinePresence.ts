@@ -28,7 +28,7 @@ export const useOnlinePresence = () => {
 
     // Update last_seen in database
     const updateLastSeen = async () => {
-      await supabase.rpc("update_user_last_seen", { _user_id: user.id });
+      // await supabase.rpc("update_user_last_seen", { _user_id: user.id });
     };
 
     presenceChannel.subscribe(async (status) => {

@@ -40,7 +40,8 @@ export const conditions = [
   { id: "excellent", label: "Utmärkt" },
   { id: "good", label: "Bra" },
   { id: "fair", label: "Acceptabelt" },
-  { id: "parts", label: "Reservdelar" },
+  { id: "parts", label: "Behov av service" },
+  { id: "poor", label: "Dåligt" },
 ];
 
 export const mockListings: Listing[] = [

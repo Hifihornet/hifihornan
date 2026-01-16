@@ -129,6 +129,7 @@ interface BlogPost {
   title: string;
   slug: string;
   excerpt: string | null;
+  cover_image: string | null;
   published: boolean;
   published_at: string | null;
   created_at: string;
@@ -205,6 +206,7 @@ const AdminDashboard = () => {
   const [blogExcerpt, setBlogExcerpt] = useState("");
   const [blogContent, setBlogContent] = useState("");
   const [blogPublished, setBlogPublished] = useState(false);
+  const [blogCoverImage, setBlogCoverImage] = useState("");
   const [savingBlog, setSavingBlog] = useState(false);
 
   // Reports state
@@ -361,9 +363,25 @@ const AdminDashboard = () => {
   const fetchListings = async () => {
     setLoadingListings(true);
     try {
-      const { data, error } = await supabase.rpc("admin_get_all_listings");
+      // Use regular SQL instead of RPC function
+      const { data, error } = await supabase
+        .from("listings")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
       if (error) throw error;
-      setListings(data || []);
+      
+      // Map to AdminListing format
+      const adminListings = (data || []).map(listing => ({
+        id: listing.id,
+        title: listing.title,
+        user_id: listing.user_id,
+        status: listing.status,
+        created_at: listing.created_at,
+        seller_name: "Säljare" // Default value since we don't have seller_name
+      }));
+      
+      setListings(adminListings);
     } catch (err) {
       console.error("Error fetching listings:", err);
       toast.error("Kunde inte hämta annonser");
@@ -374,13 +392,15 @@ const AdminDashboard = () => {
 
   const fetchBroadcasts = async () => {
     try {
-      const { data, error } = await supabase
-        .from("broadcast_messages")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      setBroadcasts(data || []);
+      // Temporarily disabled - table doesn't exist
+      // const { data, error } = await supabase
+      //   .from("broadcast_messages")
+      //   .select("*")
+      //   .order("created_at", { ascending: false })
+      //   .limit(10);
+      // if (error) throw error;
+      // setBroadcasts(data || []);
+      setBroadcasts([]);
     } catch (err) {
       console.error("Error fetching broadcasts:", err);
     }
@@ -391,7 +411,7 @@ const AdminDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("id, title, slug, excerpt, published, published_at, created_at, author_id")
+        .select("id, title, slug, excerpt, cover_image, published, published_at, created_at, author_id")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -464,6 +484,7 @@ const AdminDashboard = () => {
       setBlogTitle(post.title);
       setBlogSlug(post.slug);
       setBlogExcerpt(post.excerpt || "");
+      setBlogCoverImage(post.cover_image || "");
       setBlogPublished(post.published);
       // We need to fetch the full content
       fetchBlogContent(post.id);
@@ -473,6 +494,7 @@ const AdminDashboard = () => {
       setBlogSlug("");
       setBlogExcerpt("");
       setBlogContent("");
+      setBlogCoverImage("");
       setBlogPublished(false);
     }
     setBlogDialogOpen(true);
@@ -493,6 +515,14 @@ const AdminDashboard = () => {
       return;
     }
 
+    console.log("Saving blog post:", { 
+      title: blogTitle.trim(), 
+      slug: blogSlug.trim(), 
+      content: blogContent.trim().substring(0, 100) + "...",
+      published: blogPublished,
+      isEditing: !!editingPost
+    });
+
     setSavingBlog(true);
     try {
       if (editingPost) {
@@ -502,6 +532,7 @@ const AdminDashboard = () => {
             title: blogTitle.trim(),
             slug: blogSlug.trim(),
             excerpt: blogExcerpt.trim() || null,
+            cover_image: blogCoverImage.trim() || null,
             content: blogContent.trim(),
             published: blogPublished,
             published_at: blogPublished && !editingPost.published_at ? new Date().toISOString() : editingPost.published_at,
@@ -515,6 +546,7 @@ const AdminDashboard = () => {
           title: blogTitle.trim(),
           slug: blogSlug.trim(),
           excerpt: blogExcerpt.trim() || null,
+          cover_image: blogCoverImage.trim() || null,
           content: blogContent.trim(),
           published: blogPublished,
           published_at: blogPublished ? new Date().toISOString() : null,
@@ -864,12 +896,31 @@ const AdminDashboard = () => {
   const fetchProfiles = async () => {
     setLoadingProfiles(true);
     try {
+      console.log("Attempting to fetch profiles...");
+      console.log("Current user ID:", user?.id);
+      console.log("User roles:", { isAdmin, isCreator, isModerator });
+      
       const { data, error } = await supabase.rpc("admin_get_all_profiles_with_roles");
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      console.log("Profiles data received:", data);
+      console.log("Number of profiles:", data?.length || 0);
+      
       setProfiles(data || []);
+      
+      // Force refresh role cache by triggering re-fetch
+      // This will update badges when roles change
+      setTimeout(() => {
+        window.dispatchEvent(new Event('storage'));
+      }, 100);
+      
     } catch (err) {
       console.error("Error fetching profiles:", err);
-      toast.error("Kunde inte hämta profiler");
+      toast.error(`Kunde inte hämta profiler: ${err instanceof Error ? err.message : 'Okänt fel'}`);
     } finally {
       setLoadingProfiles(false);
     }
@@ -1457,8 +1508,7 @@ const AdminDashboard = () => {
                                 </span>
                               </div>
                               {/* Action buttons - shown below user info on mobile */}
-                              {profile.user_id !== user?.id && (
-                                <div className="flex items-center gap-2 mt-3">
+                              <div className="flex items-center gap-2 mt-3">
                                   {canManageRoles && (
                                     <Button
                                       variant="outline"
@@ -1540,7 +1590,6 @@ const AdminDashboard = () => {
                                     </AlertDialog>
                                   )}
                                 </div>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -2250,6 +2299,27 @@ const AdminDashboard = () => {
                 placeholder="Kort beskrivning som visas i listan..."
                 rows={2}
               />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Omslagsbild (valfritt)
+              </label>
+              <div className="space-y-2">
+                <Input
+                  value={blogCoverImage}
+                  onChange={(e) => setBlogCoverImage(e.target.value)}
+                  placeholder="Bild-URL..."
+                />
+                {blogCoverImage && (
+                  <div className="aspect-video bg-secondary rounded-lg overflow-hidden">
+                    <img
+                      src={blogCoverImage}
+                      alt="Omslagsbild"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">

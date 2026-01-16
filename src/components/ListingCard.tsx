@@ -21,8 +21,8 @@ interface ListingCardProps {
 
 const ListingCard = ({ listing, isStoreAccount = false, isVerifiedSeller = false, status = "active" }: ListingCardProps) => {
   const navigate = useNavigate();
-  const category = categories.find((c) => c.id === listing.category);
-  const condition = conditions.find((c) => c.id === listing.condition);
+  const category = categories.find((c) => c.id === (listing.category || "other"));
+  const condition = conditions.find((c) => c.id === (listing.condition || "good"));
   const isSold = status === "sold";
   const isHidden = status === "hidden";
   
@@ -83,11 +83,19 @@ const ListingCard = ({ listing, isStoreAccount = false, isVerifiedSeller = false
       className={`group bg-card rounded-xl border border-border overflow-hidden hover-lift cursor-pointer ${isSold || isHidden ? "opacity-60" : ""}`}
     >
       <div className="aspect-[4/3] relative overflow-hidden bg-secondary">
-        <img
-          src={listing.images[0]}
-          alt={listing.title}
-          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isSold ? "grayscale" : ""}`}
-        />
+        {listing.images && listing.images.length > 0 && listing.images[0] ? (
+          <img
+            src={listing.images[0]}
+            alt={listing.title}
+            crossOrigin="anonymous"
+            referrerPolicy="no-referrer"
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isSold ? "grayscale" : ""}`}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            Ingen bild
+          </div>
+        )}
         
         {/* Sold overlay */}
         {isSold && (

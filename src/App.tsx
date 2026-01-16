@@ -9,7 +9,7 @@ import CookieConsent from "@/components/CookieConsent";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import SupportChat from "@/components/SupportChat";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
-import { useSiteVisit } from "@/hooks/useSiteVisit";
+// import { useSiteVisit } from "@/hooks/useSiteVisit";
 
 const Index = lazy(() => import("./pages/Index"));
 const Browse = lazy(() => import("./pages/Browse"));
@@ -41,10 +41,10 @@ const OnlinePresenceTracker = () => {
 };
 
 // Component to track site visits (needs to be inside BrowserRouter)
-const SiteVisitTracker = () => {
-  useSiteVisit();
-  return null;
-};
+// const SiteVisitTracker = () => {
+//   useSiteVisit();
+//   return null;
+// };
 
 const AppRoutes = () => (
   <Suspense
@@ -83,15 +83,10 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <OnlinePresenceTracker />
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SiteVisitTracker />
           <AppRoutes />
-          <BroadcastBanner />
-          <SupportChat />
-          <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

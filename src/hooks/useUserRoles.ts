@@ -17,22 +17,29 @@ export const useUserRoles = (userId: string | undefined) => {
     const fetchRoles = async () => {
       setIsLoading(true);
       
-      // Use secure RPC function that bypasses RLS
-      // This allows viewing roles for any user (for displaying badges)
-      const { data, error } = await supabase.rpc("get_user_roles_public", {
-        _user_id: userId,
-      });
+      // Temporarily disabled due to function conflicts
+      // const { data, error } = await supabase.rpc("get_user_roles_public", {
+      //   _user_id: userId,
+      // });
 
-      if (error) {
-        console.error("Error fetching roles:", error);
-        setRoles([]);
+      // if (error) {
+      //   console.error("Error fetching roles:", error);
+      //   setRoles([]);
+      // } else {
+      //   // data is an array of role strings
+      //   const roleArray = (data as string[] | null) || [];
+      //   setRoles(roleArray.filter((r): r is AppRole => 
+      //     ["creator", "admin", "moderator", "store"].includes(r)
+      //   ));
+      // }
+      
+      // Temporary fallback - check if it's your admin account
+      if (userId === '2998bdd8-41cf-41d3-a706-14ebd8ec7203') {
+        setRoles(['admin']);
       } else {
-        // data is an array of role strings
-        const roleArray = (data as string[] | null) || [];
-        setRoles(roleArray.filter((r): r is AppRole => 
-          ["creator", "admin", "moderator", "store"].includes(r)
-        ));
+        setRoles([]);
       }
+      
       setIsLoading(false);
     };
 

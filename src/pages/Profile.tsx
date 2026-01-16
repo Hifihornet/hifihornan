@@ -7,6 +7,7 @@ import ListingCard from "@/components/ListingCard";
 import CreatorBadge from "@/components/CreatorBadge";
 import StoreBadge from "@/components/StoreBadge";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AdminBadge from "@/components/AdminBadge";
 import OnlineIndicator from "@/components/OnlineIndicator";
 import ProfileSettingsDialog from "@/components/ProfileSettingsDialog";
 import SellerRating from "@/components/SellerRating";
@@ -54,7 +55,7 @@ interface ListingWithStatus extends Listing {
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
-  const { isCreator, isStore } = useUserRoles(userId);
+  const { isCreator, isStore, isAdmin, isModerator } = useUserRoles(userId);
   const isUserOnline = useIsUserOnline(userId);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<ListingWithStatus[]>([]);
@@ -66,6 +67,7 @@ const Profile = () => {
   const [showMessageInput, setShowMessageInput] = useState(false);
   const [canSendDirectMessage, setCanSendDirectMessage] = useState(false);
   const [isTargetAdmin, setIsTargetAdmin] = useState(false);
+  const [deletingListing, setDeletingListing] = useState<string | null>(null);
 
   const isOwnProfile = user?.id === userId;
 
@@ -116,7 +118,7 @@ const Profile = () => {
       const query = supabase
         .from("listings")
         .select("*")
-        .eq("seller_id", userId)
+        .eq("user_id", userId)  // Use user_id instead of seller_id
         .order("created_at", { ascending: false });
       
       // Show active and sold listings for own profile, only active for others
@@ -161,12 +163,15 @@ const Profile = () => {
   }, [fetchProfileAndListings]);
 
   const handleDeleteListing = async (listingId: string) => {
+    if (!user || user.id !== userId) return;
+    
+    setDeletingListing(listingId);
     try {
       const { error } = await supabase
         .from("listings")
         .delete()
         .eq("id", listingId)
-        .eq("seller_id", user?.id);
+        .eq("user_id", user.id); // Use user_id instead of seller_id
 
       if (error) throw error;
 
@@ -175,6 +180,8 @@ const Profile = () => {
     } catch (err) {
       console.error("Error deleting listing:", err);
       toast.error("Kunde inte ta bort annonsen");
+    } finally {
+      setDeletingListing(null);
     }
   };
 
@@ -207,6 +214,48 @@ const Profile = () => {
       toast.error("Kunde inte skicka meddelandet");
     } finally {
       setSendingMessage(false);
+    }
+  };
+
+  const handleUploadProfileImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return;
+    
+    const file = e.target.files[0];
+    if (!file.type.startsWith("image/")) {
+      toast.error("Endast bilder är tillåtna");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/avatar/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: urlData.publicUrl })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile(prev => prev ? { ...prev, avatar_url: urlData.publicUrl } : null);
+      toast.success("Profilbilden har uppdaterats");
+    } catch (err) {
+      console.error("Error uploading profile image:", err);
+      toast.error("Kunde inte uppdatera profilbilden");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
     }
   };
 
@@ -343,6 +392,17 @@ const Profile = () => {
                     <User className="w-10 h-10 text-primary-foreground" />
                   )}
                 </div>
+                {isOwnProfile && (
+                  <label className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg">
+                    <Upload className="w-3 h-3" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUploadProfileImage}
+                    />
+                  </label>
+                )}
                 {isCreator && <CreatorBadge size="md" className="-top-1 -right-1" />}
                 {isStore && !isCreator && <StoreBadge size="md" className="-bottom-0.5 -right-0.5" />}
               </div>
@@ -352,6 +412,8 @@ const Profile = () => {
                   <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
                     {profile.display_name || "Användare"}
                   </h1>
+                  {isAdmin && <AdminBadge showLabel size="md" />}
+                  {isCreator && !isAdmin && <CreatorBadge size="md" />}
                   {isStore && <StoreBadge showLabel size="md" labelType="profile" />}
                   {profile.is_verified_seller && !isStore && (
                     <VerifiedBadge showLabel size="md" />
@@ -461,8 +523,13 @@ const Profile = () => {
                               variant="destructive"
                               size="icon"
                               className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={deletingListing === listing.id}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {deletingListing === listing.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>

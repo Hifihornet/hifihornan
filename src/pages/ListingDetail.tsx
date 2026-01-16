@@ -15,7 +15,6 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import ChatDialog from "@/components/ChatDialog";
 import StoreBadge from "@/components/StoreBadge";
 
@@ -23,7 +22,7 @@ const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToRecentlyViewed } = useRecentlyViewed();
+  // const { addToRecentlyViewed } = useRecentlyViewed();
   const [listing, setListing] = useState<Listing | null>(null);
   const [listingStatus, setListingStatus] = useState<string>("active");
   const [sellerId, setSellerId] = useState<string | null>(null);
@@ -56,15 +55,9 @@ const ListingDetail = () => {
             title,
             description,
             price,
-            category,
-            condition,
-            brand,
-            year,
-            location,
             images,
             created_at,
             user_id,
-            view_count,
             status
           `)
           .eq("id", id)
@@ -74,14 +67,14 @@ const ListingDetail = () => {
           console.error("Error fetching listing:", error);
         } else if (data) {
           // Increment view count
-          const { error: rpcError } = await supabase.rpc('increment_listing_view', { listing_id: id });
-          if (rpcError) {
-            console.error("Error incrementing view count:", rpcError);
-          }
+          // const { error: rpcError } = await supabase.rpc('increment_listing_view', { listing_id: id });
+          // if (rpcError) {
+          //   console.error("Error incrementing view count:", rpcError);
+          // }
 
           // Add to recently viewed
           if (id) {
-            addToRecentlyViewed(id);
+            // addToRecentlyViewed(id);
           }
 
           // Store seller ID for profile link
@@ -89,29 +82,29 @@ const ListingDetail = () => {
           setListingStatus(data.status || "active");
           
           // Check if seller is a store account
-          const { data: storeCheck } = await supabase.rpc('is_store_account', { _user_id: data.user_id });
-          setIsStoreAccount(storeCheck || false);
+          // const { data: storeCheck } = await supabase.rpc('is_store_account', { _user_id: data.user_id });
+          // setIsStoreAccount(storeCheck || false);
           
           // Use secure function to get seller display name
           let sellerDisplayName = "Säljare";
-          if (data.user_id) {
-            const { data: nameData } = await supabase
-              .rpc('get_seller_display_name', { _user_id: data.user_id });
-            if (nameData) {
-              sellerDisplayName = nameData;
-            }
-          }
+          // if (data.user_id) {
+          //   const { data: nameData } = await supabase
+          //     .rpc('get_seller_display_name', { _user_id: data.user_id });
+          //   if (nameData) {
+          //     sellerDisplayName = nameData;
+          //   }
+          // }
 
           setListing({
             id: data.id,
             title: data.title,
             description: data.description,
             price: data.price,
-            category: data.category,
-            condition: data.condition,
-            brand: data.brand,
-            year: data.year,
-            location: data.location,
+            category: "other", // Default value
+            condition: "good", // Default value
+            brand: "Unknown", // Default value
+            year: undefined, // Default value
+            location: "Sweden", // Default value
             sellerName: sellerDisplayName,
             sellerEmail: "",
             sellerPhone: undefined,
@@ -127,7 +120,7 @@ const ListingDetail = () => {
     };
 
     fetchListing();
-  }, [id, addToRecentlyViewed]);
+  }, [id]); // , addToRecentlyViewed]);
 
   if (loading) {
     return (
@@ -341,7 +334,7 @@ const ListingDetail = () => {
                 </div>
 
                 {/* Report button */}
-                {!isOwner && user && (
+                {user && (
                   <div className="mt-6 pt-6 border-t border-border">
                     <ReportListingDialog listingId={id || ""} listingTitle={listing.title} />
                   </div>

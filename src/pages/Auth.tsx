@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ const Auth = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptedCookies, setAcceptedCookies] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   
   // New privacy options
   const [isSearchable, setIsSearchable] = useState(false);
@@ -41,6 +42,15 @@ const Auth = () => {
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+
+  // Hämta sparad e-post vid component mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +126,13 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
+          // Hantera localStorage för remember me
+          if (rememberMe) {
+            localStorage.setItem('rememberedEmail', email);
+          } else {
+            localStorage.removeItem('rememberedEmail');
+          }
+          
           toast.success("Inloggad!");
           navigate("/");
         }
@@ -304,6 +321,19 @@ const Auth = () => {
                 )}
                 {!isLogin && <PasswordStrengthIndicator password={password} />}
               </div>
+
+              {isLogin && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember-me"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  />
+                  <label htmlFor="remember-me" className="text-sm text-muted-foreground cursor-pointer">
+                    Spara uppgifterna
+                  </label>
+                </div>
+              )}
 
               {!isLogin && (
                 <div className="space-y-4 pt-2">

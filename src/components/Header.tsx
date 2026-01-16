@@ -45,7 +45,11 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 group">
-            <img src={logo} alt="HiFiHörnet" className="h-10 w-auto" />
+            <img 
+              src={logo} 
+              alt="HiFiHörnet" 
+              className="h-14 w-auto transition-transform duration-300 ease-in-out group-hover:scale-110" 
+            />
           </Link>
 
           {/* Desktop Navigation */}

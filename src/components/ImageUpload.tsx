@@ -63,9 +63,11 @@ const ImageUpload = ({ images, onImagesChange, maxImages = 8 }: ImageUploadProps
           .getPublicUrl(filePath);
 
         newImageUrls.push(publicUrl);
+        console.log("Image uploaded, publicUrl:", publicUrl);
       }
 
       if (newImageUrls.length > 0) {
+        console.log("Calling onImagesChange with:", [...images, ...newImageUrls]);
         onImagesChange([...images, ...newImageUrls]);
         toast.success(`${newImageUrls.length} bild(er) uppladdade`);
       }
