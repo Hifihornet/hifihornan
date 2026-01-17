@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
+import { MessageCircle, Send, X, Plus, GripVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, MessageCircle, X, Inbox, GripVertical } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useMobileOptimization } from "@/hooks/useMobileOptimization";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import logoImage from "@/assets/logo.png";
 import { useNavigate } from "react-router-dom";
+import logoImage from "@/assets/logo.png";
 
 const SupportChat = () => {
   const { user } = useAuth();
@@ -15,9 +19,9 @@ const SupportChat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [messageSent, setMessageSent] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [hasSeenTooltip, setHasSeenTooltip] = useState(false);
+  const [forceNewConversation, setForceNewConversation] = useState(false);
   
   // Dragging state
   const [position, setPosition] = useState({ x: 24, y: 24 }); // Distance from bottom-right
@@ -80,10 +84,9 @@ const SupportChat = () => {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Reset messageSent when chat closes
+  // Reset when chat closes
   useEffect(() => {
     if (!isOpen) {
-      setMessageSent(false);
       setNewMessage("");
     }
   }, [isOpen]);
@@ -156,8 +159,6 @@ const SupportChat = () => {
   }, [isDragging]);
 
   const sendMessage = async () => {
-    if (!user) return;
-
     const content = newMessage.trim();
     if (!content) return;
 
@@ -165,22 +166,36 @@ const SupportChat = () => {
     setNewMessage("");
 
     try {
-      const { data: existing } = await supabase
+      // Hitta admin användare - använd ditt user ID som fallback
+      const adminUserId = "2998bdd8-41cf-41d3-a706-14ebd8ec7203"; // Ditt user ID
+
+      // Hämta alla befintliga support-konversationer för denna användare
+      console.log("Fetching all support conversations for user:", user.id);
+      const { data: allConversations } = await supabase
         .from("conversations")
-        .select("id")
+        .select("id, created_at")
         .is("listing_id", null)
         .eq("buyer_id", user.id)
-        .maybeSingle();
+        .eq("seller_id", adminUserId)
+        .order("created_at", { ascending: false });
 
-      let convId = existing?.id ?? null;
+      console.log("Found conversations:", allConversations?.length, allConversations);
 
-      if (!convId) {
+      let convId = null;
+      
+      if (!forceNewConversation && allConversations && allConversations.length > 0) {
+        // Använd den senaste befintliga konversationen
+        convId = allConversations[0].id;
+        console.log("Using existing support conversation:", convId);
+      } else {
+        console.log("Creating new support conversation, forceNewConversation:", forceNewConversation);
+        // Skapa ny konversation
         const { data: newConv, error: createError } = await supabase
           .from("conversations")
           .insert({
             listing_id: null,
             buyer_id: user.id,
-            seller_id: user.id,
+            seller_id: adminUserId, // Admin som säljare/mottagare
           })
           .select("id")
           .single();
@@ -193,28 +208,98 @@ const SupportChat = () => {
         }
 
         convId = newConv.id;
+        setForceNewConversation(false); // Reset flagga
+        console.log("Created new support conversation:", convId);
       }
 
-      const { error } = await supabase.from("messages").insert({
+      // Skapa meddelande från användare
+      const { error: messageError } = await supabase.from("messages").insert({
         conversation_id: convId,
         sender_id: user.id,
-        content,
+        content: content,
+        is_system_message: false,
       });
 
-      if (error) {
-        console.error("Error sending message:", error);
+      if (messageError) {
+        console.error("Error sending message:", messageError);
         toast.error("Kunde inte skicka meddelande");
         setNewMessage(content);
-      } else {
-        setMessageSent(true);
+        return;
       }
+
+      // Skapa system-meddelande för att markera som support-ärende
+      const { error: systemError } = await supabase.from("messages").insert({
+        conversation_id: convId,
+        sender_id: adminUserId,
+        content: `🎫 Support-ärende skapat från supportbott\nPrioritet: Normal\nStatus: Ny`,
+        is_system_message: true,
+      });
+
+      if (systemError) {
+        console.error("Error creating system message:", systemError);
+      } else {
+        console.log("System message created successfully");
+      }
+
+      console.log("Message sent to conversation:", convId);
+      toast.success("Support-ärende skapat! Du hittar det under Meddelanden.");
+      setNewMessage(""); // Rensa input efter skickat
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Ett fel uppstod");
+      console.error("Error in sendMessage:", error);
+      toast.error("Något gick fel. Försök igen.");
       setNewMessage(content);
     } finally {
       setSending(false);
     }
+  };
+
+  const fallbackToConversation = async (content: string) => {
+    // Fallback om support_tickets tabellen inte finns
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("id")
+      .is("listing_id", null)
+      .eq("buyer_id", user.id)
+      .maybeSingle();
+
+    let convId = existing?.id ?? null;
+
+    if (!convId) {
+      const { data: newConv, error: createError } = await supabase
+        .from("conversations")
+        .insert({
+          listing_id: null,
+          buyer_id: user.id,
+          seller_id: user.id,
+        })
+        .select("id")
+        .single();
+
+      if (createError) {
+        console.error("Error creating support conversation:", createError);
+        toast.error("Kunde inte skapa supportärende");
+        setNewMessage(content);
+        return;
+      }
+
+      convId = newConv.id;
+    }
+
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: convId,
+      sender_id: user.id,
+      content: content,
+      is_system_message: false,
+    });
+
+    if (error) {
+      console.error("Error sending message:", error);
+      toast.error("Kunde inte skicka meddelande");
+      setNewMessage(content);
+      return;
+    }
+
+    toast.success("Meddelande skickat! Vi återkommer snart.");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -309,12 +394,8 @@ const SupportChat = () => {
         >
           {/* Header */}
           <div className="p-4 border-b border-border bg-card flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0">
-              <img
-                src={logoImage}
-                alt="HiFiHörnet"
-                className="w-8 h-8 object-contain"
-              />
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+              <MessageCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex-1">
               <h3 className="font-display font-semibold text-foreground">
@@ -335,75 +416,63 @@ const SupportChat = () => {
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-4 flex flex-col items-center justify-center text-center">
-            {messageSent ? (
-              <div className="space-y-4">
-                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-                  <MessageCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-foreground font-medium mb-2">
-                    Tack för att du hör av dig! 🙏
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Ditt meddelande har skickats och flyttats till din inkorg. Vi hör av oss så snart vi kan!
-                  </p>
-                </div>
-                <Button onClick={goToInbox} className="gap-2">
-                  <Inbox className="w-4 h-4" />
-                  Gå till inkorgen
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMessageSent(false)}
-                  className="text-muted-foreground"
-                >
-                  Skicka ett nytt meddelande
-                </Button>
+          <div className="flex-1 p-4 flex flex-col">
+            <div className="space-y-4 text-center mb-auto">
+              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto">
+                <MessageCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
-            ) : (
-              <div className="space-y-4 w-full">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <MessageCircle className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <p className="text-foreground font-medium mb-1">Hej! 👋</p>
-                  <p className="text-sm text-muted-foreground">
-                    Har du frågor? Skriv till oss så hjälper vi dig!
-                  </p>
-                </div>
+              <div>
+                <p className="text-foreground font-medium mb-1">Kundsupport 🛠️</p>
+                <p className="text-sm text-muted-foreground">
+                  Har du frågor eller problem? Vi hjälper dig direkt!
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Öppet vardagar 9-17, svar inom 24 timmar
+                </p>
               </div>
-            )}
+              
+              {/* Nytt ärende knapp */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setForceNewConversation(true);
+                  setNewMessage("");
+                  toast.info("Nytt support-ärende kommer att skapas när du skickar ditt meddelande");
+                }}
+                className="mx-auto"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Starta nytt ärende
+              </Button>
+            </div>
           </div>
 
           {/* Input */}
-          {!messageSent && (
-            <div className="p-4 border-t border-border bg-card">
-              <div className="flex gap-2">
-                <Textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Skriv ett meddelande..."
-                  className="min-h-[44px] max-h-[100px] resize-none"
-                  rows={1}
-                />
-                <Button
-                  onClick={sendMessage}
-                  disabled={!newMessage.trim() || sending}
-                  size="icon"
-                  className="shrink-0"
-                >
-                  {sending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
+          <div className="p-4 border-t border-border bg-card">
+            <div className="flex gap-2">
+              <Textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Beskriv ditt problem eller fråga här..."
+                className="flex-1 resize-none"
+                rows={2}
+              />
+              <Button 
+                onClick={sendMessage} 
+                disabled={sending || !newMessage.trim()}
+                size="icon"
+                className="shrink-0"
+              >
+                {sending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-          )}
+          </div>
         </div>
       )}
     </>

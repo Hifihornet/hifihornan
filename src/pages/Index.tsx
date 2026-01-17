@@ -21,7 +21,6 @@ import { MobileOptimizedInput } from "@/components/ui/mobile-optimized-input";
 import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 import { CompactButton } from "@/components/ui/compact-button";
 import { SEOHead } from "@/components/SEOHead";
-import { Chatbot } from "@/components/Chatbot";
 import { useGamification } from "@/hooks/useGamification";
 
 const Index = () => {
@@ -310,9 +309,6 @@ const Index = () => {
       </section>
 
       <Footer />
-      
-      {/* Chatbot */}
-      <Chatbot />
     </div>
   );
 };

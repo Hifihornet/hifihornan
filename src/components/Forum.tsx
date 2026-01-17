@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, ThumbsUp, Reply, Search, Hash, Users, Clock, TrendingUp } from 'lucide-react';
+import { MessageCircle, ThumbsUp, Reply, Search, Hash, Users, Clock, TrendingUp, Trash2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { SEOHead } from '@/components/SEOHead';
 
 interface ForumPost {
   id: string;
@@ -51,10 +54,10 @@ const FORUM_CATEGORIES = [
   { id: 'amplifiers', name: 'Förstärkare', icon: '🔊', color: 'bg-green-500' },
   { id: 'speakers', name: 'Högtalare', icon: '🔈', color: 'bg-purple-500' },
   { id: 'turntables', name: 'Skivspelare', icon: '💿', color: 'bg-orange-500' },
-  { id: 'vintage', name: 'Vintage', icon: '📻', color: 'bg-amber-500' },
-  { id: 'diy', name: 'DIY & Bygge', icon: '🔧', color: 'bg-red-500' },
-  { id: 'reviews', name: 'Recensioner', icon: '⭐', color: 'bg-indigo-500' },
-  { id: 'market', name: 'Marknad & Priser', icon: '📊', color: 'bg-cyan-500' }
+  { id: 'diy', name: 'DIY', icon: '🔧', color: 'bg-red-500' },
+  { id: 'buying', name: 'Köpråd', icon: '💰', color: 'bg-yellow-500' },
+  { id: 'selling', name: 'Säljtips', icon: '📦', color: 'bg-indigo-500' },
+  { id: 'vintage', name: 'Vintage', icon: '📻', color: 'bg-pink-500' }
 ];
 
 export function Forum() {
@@ -67,62 +70,51 @@ export function Forum() {
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '', category: 'general', tags: [] as string[] });
 
-  // Mock data för demo
+  // Check if user is admin - kolla flera möjliga roller
+  const isAdmin = user?.user_metadata?.role === 'admin' || 
+                  user?.user_metadata?.role === 'moderator' ||
+                  user?.app_metadata?.role === 'admin' ||
+                  user?.app_metadata?.role === 'moderator' ||
+                  user?.email === 'alex.ljungbergs@icloud.com'; // Fallback för din email
+
+  // Debug: Logga admin-status
+  console.log('User:', user);
+  console.log('Is Admin:', isAdmin);
+  console.log('User metadata:', user?.user_metadata);
+  console.log('App metadata:', user?.app_metadata);
+
+  const handleDeletePost = (postId: string) => {
+    if (!isAdmin) {
+      toast.error('Du måste vara admin för att ta bort inlägg');
+      return;
+    }
+
+    if (window.confirm('Är du säker på att du vill ta bort detta inlägg?')) {
+      // Ta bort från state
+      const updatedPosts = posts.filter(post => post.id !== postId);
+      setPosts(updatedPosts);
+      
+      // Uppdatera localStorage
+      localStorage.setItem('forum_posts', JSON.stringify(updatedPosts));
+      
+      toast.success('Inlägget har tagits bort');
+    }
+  };
+
+  // Mock data för demo - nu med localStorage för att spara inlägg
   useEffect(() => {
-    const mockPosts: ForumPost[] = [
-      {
-        id: '1',
-        title: 'Behöver hjälp med Marantz 2270 justering',
-        content: 'Hej alla! Jag har precis köpt en Marantz 2270 och undrar om någon kan hjälpa mig med bias-justeringen. Läser 0.1V höger och vänster, men soundstage känns lite skevt. Några tips?',
-        author: {
-          id: '1',
-          name: 'HiFiEntusiast',
-          avatar: '/avatars/user1.jpg',
-          isVerified: true
-        },
-        category: 'amplifiers',
-        tags: ['marantz', '2270', 'bias', 'justering'],
-        likes: 12,
-        replies: 8,
-        views: 234,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        isPinned: true
-      },
-      {
-        id: '2',
-        title: 'Bästa budget-högtalarna under 5000kr?',
-        content: 'Letar efter ett par högtalare till min hemmabiostudio. Budget är max 5000kr och jag lyssnar mest på jazz och klassiskt. Några rekommendationer?',
-        author: {
-          id: '2',
-          name: 'AudioNerd',
-          avatar: '/avatars/user2.jpg'
-        },
-        category: 'speakers',
-        tags: ['budget', 'högtalare', 'rekommendation', 'jazz'],
-        likes: 23,
-        replies: 15,
-        views: 567,
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        title: 'DIY: Byggde min egen förstärkare - bilder!',
-        content: 'Efter 6 månaders arbete är äntligen mitt DIY-projekt klart! En 2x30W förstärkare baserad på JLH1969. Scheman och bilder finns i kommentarerna.',
-        author: {
-          id: '3',
-          name: 'DIY-Master',
-          avatar: '/avatars/user3.jpg',
-          isVerified: true,
-          isStore: true
-        },
-        category: 'diy',
-        tags: ['diy', 'förstärkare', 'jlh1969', 'bygge'],
-        likes: 45,
-        replies: 23,
-        views: 892,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    // Hämta sparade inlägg från localStorage
+    const savedPosts = localStorage.getItem('forum_posts');
+    let mockPosts: ForumPost[] = [];
+    
+    if (savedPosts) {
+      try {
+        mockPosts = JSON.parse(savedPosts);
+      } catch (error) {
+        console.error('Error parsing saved posts:', error);
+        mockPosts = [];
       }
-    ];
+    }
 
     // Simulera laddning
     setTimeout(() => {
@@ -130,6 +122,13 @@ export function Forum() {
       setLoading(false);
     }, 1000);
   }, []);
+
+  // Spara inlägg till localStorage när de ändras
+  useEffect(() => {
+    if (posts.length > 0) {
+      localStorage.setItem('forum_posts', JSON.stringify(posts));
+    }
+  }, [posts]);
 
   const filteredPosts = posts.filter(post => {
     const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
@@ -199,198 +198,249 @@ export function Forum() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/3" />
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-muted rounded-lg" />
-            ))}
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="flex-1 pt-20 lg:pt-24 pb-12">
+          <div className="container mx-auto px-4 py-8">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-muted rounded w-1/3" />
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-32 bg-muted rounded-lg" />
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar */}
-        <div className="lg:w-64 space-y-6">
-          {/* New Post Button */}
-          <Button 
-            onClick={() => setShowNewPost(true)}
-            className="w-full gap-2"
-            size="lg"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Nytt inlägg
-          </Button>
-
-          {/* Categories */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Hash className="w-4 h-4" />
-                Kategorier
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
-                  selectedCategory === 'all' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                }`}
+    <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Forum - HiFiHörnet"
+        description="Diskutera HiFi, audio och utrustning med andra entusiaster. Få hjälp, dela erfarenheter och bygg nätverk."
+        keywords="HiFi forum, audio forum, diskussion, hjälp, entusiaster, marantz, technics, mcintosh"
+        image="/og-forum.jpg"
+      />
+      <Header />
+      
+      <main className="flex-1 pt-20 lg:pt-24 pb-12">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Sidebar */}
+            <div className="lg:w-64 space-y-6">
+              {/* New Post Button */}
+              <Button 
+                onClick={() => setShowNewPost(true)}
+                className="w-full gap-2"
+                size="lg"
               >
-                Alla kategorier
-              </button>
-              {FORUM_CATEGORIES.map(category => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                    selectedCategory === category.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                  }`}
-                >
-                  <span>{category.icon}</span>
-                  {category.name}
-                </button>
-              ))}
-            </CardContent>
-          </Card>
+                <MessageCircle className="w-4 h-4" />
+                Nytt inlägg
+              </Button>
 
-          {/* Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Statistik
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>Totalt inlägg</span>
-                <span className="font-medium">{posts.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Aktiva användare</span>
-                <span className="font-medium">127</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Inlägg idag</span>
-                <span className="font-medium">8</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              {/* Categories */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Hash className="w-4 h-4" />
+                    Kategorier
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <button
+                    onClick={() => setSelectedCategory('all')}
+                    className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                      selectedCategory === 'all' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                    }`}
+                  >
+                    <span className="mr-2">📋</span>
+                    Alla kategorier
+                  </button>
+                  {FORUM_CATEGORIES.map(category => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                        selectedCategory === category.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                      }`}
+                    >
+                      <span className="mr-2">{category.icon}</span>
+                      {category.name}
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
 
-        {/* Main Content */}
-        <div className="flex-1 space-y-6">
-          {/* Search and Sort */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Sök inlägg..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 rounded-md border border-border bg-background"
-            >
-              <option value="latest">Senaste</option>
-              <option value="popular">Populära</option>
-              <option value="trending">Trendande</option>
-            </select>
-          </div>
-
-          {/* Posts */}
-          <div className="space-y-4">
-            {sortedPosts.map(post => (
-              <Card key={post.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={post.author.avatar} />
-                        <AvatarFallback>{post.author.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{post.author.name}</span>
-                          {post.author.isVerified && (
-                            <Badge variant="secondary" className="text-xs">Verifierad</Badge>
-                          )}
-                          {post.author.isStore && (
-                            <Badge variant="outline" className="text-xs">Butik</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {new Date(post.createdAt).toLocaleDateString('sv-SE')}
-                        </div>
-                      </div>
-                    </div>
-                    {post.isPinned && (
-                      <Badge variant="default" className="text-xs">📌 Fastnålad</Badge>
-                    )}
+              {/* Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Statistik
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Inlägg</span>
+                    <span className="font-semibold">{posts.length}</span>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="text-lg font-semibold mb-2 hover:text-primary transition-colors cursor-pointer">
-                    {post.title}
-                  </h3>
-
-                  {/* Content */}
-                  <p className="text-muted-foreground mb-4 line-clamp-3">
-                    {post.content}
-                  </p>
-
-                  {/* Tags */}
-                  {post.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {post.tags.map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          #{tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => handleLikePost(post.id)}
-                        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <ThumbsUp className="w-4 h-4" />
-                        {post.likes}
-                      </button>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Reply className="w-4 h-4" />
-                        {post.replies}
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        {post.views}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {FORUM_CATEGORIES.find(c => c.id === post.category)?.icon} {FORUM_CATEGORIES.find(c => c.id === post.category)?.name}
-                    </Badge>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Användare</span>
+                    <span className="font-semibold">-</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Aktiva idag</span>
+                    <span className="font-semibold">-</span>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1">
+              {/* Header */}
+              <div className="mb-6">
+                <h1 className="font-display text-3xl font-bold mb-4">HiFi Forum</h1>
+                <p className="text-muted-foreground mb-6">
+                  Diskutera HiFi, audio och utrustning med andra entusiaster
+                </p>
+
+                {/* Search and Sort */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Sök inlägg..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="px-3 py-2 rounded-md border border-border bg-background"
+                  >
+                    <option value="latest">Senaste</option>
+                    <option value="popular">Populärast</option>
+                    <option value="trending">Trending</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Posts */}
+              {sortedPosts.length === 0 ? (
+                <Card>
+                  <CardContent className="py-16 text-center">
+                    <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-display text-xl font-semibold mb-2">Inga inlägg än</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Bli den första att skapa ett inlägg och starta diskussionen!
+                    </p>
+                    <Button onClick={() => setShowNewPost(true)}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Skapa första inlägget
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {sortedPosts.map(post => (
+                    <Card key={post.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={post.author.avatar} />
+                            <AvatarFallback>{post.author.name[0]?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center gap-4 mb-2">
+                              <h3 className="font-semibold text-lg">{post.title}</h3>
+                              {post.isPinned && (
+                                <Badge variant="secondary">📌 Fastnålad</Badge>
+                              )}
+                              {post.isLocked && (
+                                <Badge variant="secondary">🔒 Låst</Badge>
+                              )}
+                              {isAdmin && (
+                                <Badge variant="destructive" className="gap-1">
+                                  <Shield className="w-3 h-3" />
+                                  Admin
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <p className="text-muted-foreground mb-4 line-clamp-2">
+                              {post.content}
+                            </p>
+                            
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{post.author.name}</span>
+                              <span>•</span>
+                              <span>{new Date(post.createdAt).toLocaleDateString('sv-SE')}</span>
+                              <span>•</span>
+                              <span>{post.category}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 mt-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleLikePost(post.id)}
+                                className="gap-1"
+                              >
+                                <ThumbsUp className="w-4 h-4" />
+                                {post.likes}
+                              </Button>
+                              
+                              <Button variant="ghost" size="sm" className="gap-1">
+                                <Reply className="w-4 h-4" />
+                                {post.replies}
+                              </Button>
+                              
+                              <Button variant="ghost" size="sm" className="gap-1">
+                                <Users className="w-4 h-4" />
+                                {post.views}
+                              </Button>
+                              
+                              {isAdmin && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeletePost(post.id)}
+                                  className="gap-1 ml-auto"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Ta bort
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {post.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-4">
+                                {post.tags.map(tag => (
+                                  <Badge key={tag} variant="outline" className="text-xs">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* New Post Modal */}
       {showNewPost && (
@@ -458,6 +508,8 @@ export function Forum() {
           </Card>
         </div>
       )}
+
+      <Footer />
     </div>
   );
 }

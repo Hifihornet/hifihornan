@@ -95,6 +95,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AppRoutes />
+            <SupportChat />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

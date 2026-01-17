@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MessageCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { MessageCircle, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import OnlineIndicator from "@/components/OnlineIndicator";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnlineUsers } from "@/hooks/useOnlinePresence";
@@ -13,6 +14,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 import ChatDialog from "@/components/ChatDialog";
 import logoImage from "@/assets/logo.png";
+import { toast } from "sonner";
 
 interface Conversation {
   id: string;
@@ -38,6 +40,10 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+  const [isSupportConversation, setIsSupportConversation] = useState(false);
 
   // Get list of other user IDs for online status
   const otherUserIds = useMemo(() => 
@@ -46,11 +52,201 @@ const Messages = () => {
   );
   const { isOnline } = useOnlineUsers(otherUserIds);
 
+  const handleDeleteConversation = async (conversationId: string) => {
+    // Find the conversation to check if it's a support conversation
+    const conversation = conversations.find(conv => conv.id === conversationId);
+    const isSupportConv = conversation?.listing_id === null;
+    
+    setIsSupportConversation(isSupportConv);
+    
+    // Always use the ConfirmDialog for both types
+    setConversationToDelete(conversationId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete || !user) return;
+
+    setDeletingConversationId(conversationToDelete);
+    setDeleteDialogOpen(false);
+    
+    // Check if this is a support conversation
+    const conversation = conversations.find(conv => conv.id === conversationToDelete);
+    const isSupportConv = conversation?.listing_id === null;
+    
+    if (isSupportConv) {
+      // Support conversation - remove from UI state only
+      console.log("Hiding support conversation from UI:", conversationToDelete);
+      
+      // Remove from local state only
+      setConversations(prev => prev.filter(conv => conv.id !== conversationToDelete));
+      
+      // Close chat if it was the selected one
+      if (selectedConversation?.id === conversationToDelete) {
+        setSelectedConversation(null);
+        setChatOpen(false);
+      }
+      
+      // Clear cache
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('messages') || key.includes('conversations') || key.includes('chat')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      toast.success("Support-konversationen är nu dold från din inkorg");
+      setDeletingConversationId(null);
+      setConversationToDelete(null);
+      return;
+    }
+    
+    // Regular conversation - proceed with full deletion
+    try {
+      console.log("Deleting regular conversation:", conversationToDelete);
+      
+      // Delete all messages in the conversation first
+      const { error: messagesError } = await supabase
+        .from("messages")
+        .delete()
+        .eq("conversation_id", conversationToDelete);
+
+      if (messagesError) {
+        console.error("Error deleting messages:", messagesError);
+        throw messagesError;
+      }
+
+      // Delete the conversation
+      const { error: convError } = await supabase
+        .from("conversations")
+        .delete()
+        .eq("id", conversationToDelete);
+
+      if (convError) {
+        console.error("Error deleting conversation:", convError);
+        console.error("Error details:", JSON.stringify(convError, null, 2));
+        
+        // If foreign key constraint error, try deleting messages first
+        if (convError.code === '23503' || convError.message?.includes('foreign key')) {
+          console.log("Foreign key constraint detected, deleting messages first...");
+          
+          // Delete all messages first
+          const { error: retryMessagesError } = await supabase
+            .from("messages")
+            .delete()
+            .eq("conversation_id", conversationToDelete);
+
+          if (retryMessagesError) {
+            console.error("Error deleting messages on retry:", retryMessagesError);
+            throw retryMessagesError;
+          }
+
+          // Then delete the conversation
+          const { error: retryConvError } = await supabase
+            .from("conversations")
+            .delete()
+            .eq("id", conversationToDelete);
+
+          if (retryConvError) {
+            console.error("Error deleting conversation on retry:", retryConvError);
+            throw retryConvError;
+          }
+        } else {
+          throw convError;
+        }
+      }
+
+      console.log("Successfully deleted regular conversation from DB");
+
+      // VERIFY deletion was successful before proceeding
+      console.log("Verifying deletion...");
+      const { data: verifyConv, error: verifyError } = await supabase
+        .from("conversations")
+        .select("id, buyer_id, seller_id, listing_id, created_at")
+        .eq("id", conversationToDelete)
+        .maybeSingle();
+
+      console.log("Verification result:", { verifyConv, verifyError });
+
+      if (verifyError) {
+        console.error("Verification error:", verifyError);
+        console.error("Verification error details:", JSON.stringify(verifyError, null, 2));
+        throw new Error("Kunde inte verifiera radering: " + verifyError.message);
+      }
+
+      if (verifyConv) {
+        console.error("Verification failed - conversation still exists:", verifyConv);
+        console.error("Full conversation data:", JSON.stringify(verifyConv, null, 2));
+        
+        // Try to check if there are any messages left
+        const { data: remainingMessages, error: msgCheckError } = await supabase
+          .from("messages")
+          .select("id, content, created_at")
+          .eq("conversation_id", conversationToDelete)
+          .limit(5);
+
+        console.log("Remaining messages check:", { remainingMessages, msgCheckError });
+        
+        throw new Error("Konversationen kunde inte raderas från databasen - finns fortfarande kvar");
+      }
+
+      console.log("Verification successful - conversation is really deleted");
+
+      // Remove from local state
+      setConversations(prev => {
+        const filtered = prev.filter(conv => conv.id !== conversationToDelete);
+        console.log("Filtered conversations:", filtered.map(c => ({ id: c.id, other_user: c.other_user_name })));
+        return filtered;
+      });
+      
+      // Close chat if it was the selected one
+      if (selectedConversation?.id === conversationToDelete) {
+        setSelectedConversation(null);
+        setChatOpen(false);
+      }
+      
+      // Clear ALL localStorage cache to prevent re-appearance
+      console.log("Clearing all localStorage cache...");
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('messages') || key.includes('conversations') || key.includes('chat')) {
+          console.log("Removing cache key:", key);
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Force a complete page reload to clear all React state and cache
+      console.log("Forcing complete page reload after successful verification...");
+      toast.success("Konversationen har raderats permanent");
+      
+      // Small delay to show success message before reload
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      toast.error("Kunde inte radera konversationen");
+    } finally {
+      setDeletingConversationId(null);
+      setConversationToDelete(null);
+    }
+  };
+
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
     try {
+      console.log("Fetching conversations for user:", user.id);
+      
+      // Clear any potential cache before fetching
+      console.log("Clearing cache keys...");
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('messages_cache_') || key.includes('conversations_cache_')) {
+          console.log("Removing cache key:", key);
+          localStorage.removeItem(key);
+        }
+      });
+
       // Fetch conversations where user is buyer or seller
       const { data: convs, error: convsError } = await supabase
         .from("conversations")
@@ -62,6 +258,8 @@ const Messages = () => {
         console.error("Error fetching conversations:", convsError);
         return;
       }
+
+      console.log("Fetched conversations from DB:", convs?.length);
 
       // Enrich with listing info and other user name
       const enrichedConversations = await Promise.all(
@@ -120,6 +318,7 @@ const Messages = () => {
         })
       );
 
+      console.log("Setting conversations in state:", enrichedConversations.map(c => ({ id: c.id, other_user: c.other_user_name })));
       setConversations(enrichedConversations);
     } catch (error) {
       console.error("Error:", error);
@@ -272,7 +471,7 @@ const Messages = () => {
                               </p>
                             )}
                           </div>
-                          <div className="shrink-0 text-right">
+                          <div className="shrink-0 flex items-center gap-2">
                             {conv.last_message_at && (
                               <span className="text-xs text-muted-foreground">
                                 {formatDistanceToNow(new Date(conv.last_message_at), {
@@ -285,6 +484,18 @@ const Messages = () => {
                               <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
                                 {conv.unread_count}
                               </span>
+                            )}
+                            {/* Delete button for non-system conversations */}
+                            {!conv.is_system_conversation && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteConversation(conv.id)}
+                                disabled={deletingConversationId === conv.id}
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             )}
                           </div>
                         </div>
@@ -322,6 +533,21 @@ const Messages = () => {
           isSystemConversation={selectedConversation.is_system_conversation}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={isSupportConversation ? "Dölj support-konversation" : "Radera konversation"}
+        description={isSupportConversation 
+          ? "Vill du dölja denna support-konversation från din inkorg? Den kommer att finnas kvar i systemet men du ser den inte längre. Du kan alltid återställa den genom att skicka ett nytt meddelande via supportbotten."
+          : "Är du säker på att du vill radera denna konversation? Allt innehåll kommer att tas bort permanent och detta går inte att ångra."}
+        confirmText={isSupportConversation ? "Dölj från inkorg" : "Radera permanent"}
+        cancelText="Avbryt"
+        onConfirm={confirmDeleteConversation}
+        loading={deletingConversationId !== null}
+        destructive={!isSupportConversation}
+      />
     </div>
   );
 };

@@ -239,6 +239,8 @@ const AdminDashboard = () => {
   const fetchSupportConversations = useCallback(async () => {
     setLoadingSupport(true);
     try {
+      console.log("Fetching support conversations...");
+      
       // Get all support conversations (where listing_id is null)
       const { data: conversations, error } = await supabase
         .from("conversations")
@@ -247,6 +249,21 @@ const AdminDashboard = () => {
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
+
+      console.log("Found conversations:", conversations?.length);
+
+      // Get closed conversation IDs by checking for STATUS:closed messages
+      const { data: closedStatusMessages } = await supabase
+        .from("messages")
+        .select("conversation_id")
+        .eq("content", "STATUS:closed")
+        .eq("is_system_message", true);
+
+      const closedConversationIds = new Set(
+        (closedStatusMessages || []).map(msg => msg.conversation_id)
+      );
+
+      console.log("Closed conversation IDs:", Array.from(closedConversationIds));
 
       // Enrich with user info and last message
       const enrichedConversations = await Promise.all(
@@ -278,7 +295,7 @@ const AdminDashboard = () => {
             id: conv.id,
             buyer_id: conv.buyer_id,
             updated_at: conv.updated_at,
-            status: conv.status || "open",
+            status: closedConversationIds.has(conv.id) ? "closed" : "open",
             buyer_name: profile?.display_name || "Okänd användare",
             buyer_avatar: profile?.avatar_url,
             last_message: lastMsgData?.content,
@@ -286,6 +303,9 @@ const AdminDashboard = () => {
           } as SupportConversation;
         })
       );
+
+      console.log("Enriched conversations:", enrichedConversations.map(c => ({ id: c.id, status: c.status })));
+      console.log("Show closed support:", showClosedSupport);
 
       setSupportConversations(enrichedConversations);
     } catch (err) {
@@ -653,16 +673,54 @@ const AdminDashboard = () => {
     
     setClosingConversation(true);
     try {
-      const { error } = await supabase.rpc("admin_close_support_conversation", {
-        _conversation_id: selectedSupportConv.id,
+      console.log("Closing conversation:", selectedSupportConv.id);
+      
+      // Lägg till system-meddelande om att ärendet är stängt
+      console.log("Inserting close message...");
+      const { error: msgError } = await supabase.from("messages").insert({
+        conversation_id: selectedSupportConv.id,
+        sender_id: user.id,
+        content: "🔒 Supportärendet har stängts av admin",
+        is_system_message: true,
       });
-      if (error) throw error;
+
+      if (msgError) {
+        console.error("Error inserting close message:", msgError);
+        console.error("Error details:", JSON.stringify(msgError, null, 2));
+        throw msgError;
+      }
+
+      console.log("Close message inserted successfully");
+
+      // Markera conversation som stängd genom att lägga till ett 'closed' meddelande
+      // som vi kan filtrera på senare
+      console.log("Inserting status message...");
+      const { error: statusError } = await supabase.from("messages").insert({
+        conversation_id: selectedSupportConv.id,
+        sender_id: user.id, // Använd admin ID istället för "system"
+        content: "STATUS:closed",
+        is_system_message: true,
+      });
+
+      if (statusError) {
+        console.error("Error inserting status message:", statusError);
+        console.error("Error details:", JSON.stringify(statusError, null, 2));
+        throw statusError;
+      }
+
+      console.log("Status message inserted successfully");
+      console.log("Successfully closed conversation");
       
       toast.success("Supportärende stängt");
       setSelectedSupportConv(null);
-      fetchSupportConversations();
+      
+      // Ladda om konversationer för att uppdatera status
+      console.log("Refreshing conversations...");
+      await fetchSupportConversations();
+      console.log("Conversations refreshed");
     } catch (err) {
       console.error("Error closing support conversation:", err);
+      console.error("Error details:", JSON.stringify(err, null, 2));
       toast.error("Kunde inte stänga ärendet");
     } finally {
       setClosingConversation(false);
@@ -674,10 +732,13 @@ const AdminDashboard = () => {
     
     setClosingConversation(true);
     try {
-      const { error } = await supabase.rpc("admin_reopen_support_conversation", {
-        _conversation_id: selectedSupportConv.id,
+      // Lägg till system-meddelande om att ärendet är öppnat igen
+      await supabase.from("messages").insert({
+        conversation_id: selectedSupportConv.id,
+        sender_id: user.id,
+        content: "🔓 Supportärendet har öppnats igen av admin",
+        is_system_message: true,
       });
-      if (error) throw error;
       
       toast.success("Supportärende öppnat igen");
       fetchSupportConversations();
@@ -2033,14 +2094,21 @@ const AdminDashboard = () => {
                           <div className="flex items-center justify-center py-20">
                             <Loader2 className="w-6 h-6 animate-spin text-primary" />
                           </div>
-                        ) : supportConversations.filter(c => showClosedSupport ? c.status === "closed" : c.status !== "closed").length === 0 ? (
+                        ) : supportConversations.filter(c => {
+          const isClosed = c.status === "closed";
+          console.log(`Filtering conversation ${c.id}: status=${c.status}, isClosed=${isClosed}, showClosed=${showClosedSupport}, shouldShow=${showClosedSupport ? isClosed : !isClosed}`);
+          return showClosedSupport ? isClosed : !isClosed;
+        }).length === 0 ? (
                           <div className="text-center py-20 text-muted-foreground text-sm px-4">
                             {showClosedSupport ? "Inga stängda ärenden" : "Inga öppna supportärenden"}
                           </div>
                         ) : (
                           <div className="divide-y divide-border">
                             {supportConversations
-                              .filter(c => showClosedSupport ? c.status === "closed" : c.status !== "closed")
+                              .filter(c => {
+                                const isClosed = c.status === "closed";
+                                return showClosedSupport ? isClosed : !isClosed;
+                              })
                               .map((conv) => (
                               <button
                                 key={conv.id}
