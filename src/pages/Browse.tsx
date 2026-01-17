@@ -246,6 +246,11 @@ const Browse = () => {
             </p>
           </div>
 
+          {/* Top Ad Banner */}
+          <div className="mb-6">
+            <AdBanner slot="top" />
+          </div>
+
           {/* Search and Filters */}
           <div className={`mb-6 lg:mb-8 space-y-3 lg:space-y-4 ${getResponsiveClass('px-0', 'px-0', 'px-0')}`}>
             <div className={`flex flex-col ${getResponsiveClass('gap-3', 'gap-3', 'gap-3')}`}>
@@ -453,7 +458,7 @@ const Browse = () => {
 
           {/* Ad Banner */}
           <div className="mt-12">
-            <AdBanner slot="8997727388" format="horizontal" className="max-w-4xl mx-auto" />
+            <AdBanner slot="bottom" />
           </div>
         </div>
       </main>

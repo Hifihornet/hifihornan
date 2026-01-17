@@ -28,6 +28,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Business = lazy(() => import("./pages/Business"));
 const Forum = lazy(() => import("./pages/Forum"));
 const Showcase = lazy(() => import("./pages/Showcase"));
 const Achievements = lazy(() => import("./pages/Achievements"));
@@ -75,6 +76,7 @@ const AppRoutes = () => (
       <Route path="/favoriter" element={<Favorites />} />
       <Route path="/blogg" element={<Blog />} />
       <Route path="/blogg/:slug" element={<BlogPost />} />
+      <Route path="/business" element={<Business />} />
       <Route path="/showcase" element={<Showcase />} />
       <Route path="/bevakningar" element={<SavedSearches />} />
       <Route path="/aterstall-losenord" element={<ResetPassword />} />

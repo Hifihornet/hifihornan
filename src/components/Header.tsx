@@ -31,6 +31,7 @@ const Header = () => {
     { href: "/forum", label: "Forum" },
     { href: "/blogg", label: "Nyheter" },
     { href: "/showcase", label: "Showcase" },
+    { href: "/business", label: "Business" },
   ];
 
   const handleSignOut = async () => {
