@@ -9,6 +9,7 @@ import CookieConsent from "@/components/CookieConsent";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import SupportChat from "@/components/SupportChat";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
+import { HelmetProvider } from 'react-helmet-async';
 // import { useSiteVisit } from "@/hooks/useSiteVisit";
 
 const Index = lazy(() => import("./pages/Index"));
@@ -27,7 +28,9 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Forum = lazy(() => import("./pages/Forum"));
 const Showcase = lazy(() => import("./pages/Showcase"));
+const Achievements = lazy(() => import("./pages/Achievements"));
 const SavedSearches = lazy(() => import("./pages/SavedSearches"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CookieSettings = lazy(() => import("./pages/CookieSettings"));
@@ -60,6 +63,8 @@ const AppRoutes = () => (
       <Route path="/listing/:id" element={<ListingDetail />} />
       <Route path="/create" element={<CreateListing />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/forum" element={<Forum />} />
+      <Route path="/achievements" element={<Achievements />} />
       <Route path="/integritetspolicy" element={<PrivacyPolicy />} />
       <Route path="/cookies" element={<CookiePolicy />} />
       <Route path="/anvandarvillkor" element={<TermsOfService />} />
@@ -80,17 +85,19 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

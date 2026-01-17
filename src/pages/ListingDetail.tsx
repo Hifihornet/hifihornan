@@ -21,6 +21,7 @@ import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
 import { useErrorToast } from "@/hooks/useErrorToast";
+import { SEOHead } from "@/components/SEOHead";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -238,6 +239,15 @@ const ListingDetail = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {listing && (
+        <SEOHead
+          title={`${listing.title} - ${listing.price} kr`}
+          description={`${listing.title} för ${listing.price} kr. ${listing.description.substring(0, 160)}... ${listing.condition} skick. ${listing.location}`}
+          keywords={`${listing.brand}, ${listing.category}, HiFi, ${listing.title}, begagnat, ${listing.price} kr, ${listing.location}`}
+          image={listing.images[0]}
+          article={true}
+        />
+      )}
       <Header />
 
       <main className="flex-1 pt-24 pb-12">
@@ -481,7 +491,7 @@ const ListingDetail = () => {
                           <StoreBadge showLabel size="sm" />
                         )}
                       </div>
-                      <SellerRating sellerId={sellerId} showCount={false} size="sm" />
+                      <SellerRating sellerId={sellerId} size="sm" />
                       <div className="text-sm text-muted-foreground">Visa profil →</div>
                     </div>
                   </Link>

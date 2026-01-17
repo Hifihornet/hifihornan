@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, MapPin, Calendar, User, Eye, Share2, Facebook, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EnhancedCard, GradientText } from "@/components/ui/enhanced-card";
 import { formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 import { Listing, categories, conditions } from "@/data/listings";
@@ -86,7 +85,7 @@ const ListingCard = ({ listing, isStoreAccount = false, isVerifiedSeller = false
   return (
     <article 
       onClick={handleCardClick}
-      className={`group bg-card rounded-xl border border-border overflow-hidden hover-lift cursor-pointer ${isSold || isHidden ? "opacity-60" : ""}`}
+      className={`group bg-card rounded-lg border border-border overflow-hidden hover-lift cursor-pointer ${isSold || isHidden ? "opacity-60" : ""}`}
     >
       <div className="aspect-[4/3] relative overflow-hidden bg-secondary">
         {listing.images && listing.images.length > 0 && listing.images[0] ? (
@@ -179,14 +178,14 @@ const ListingCard = ({ listing, isStoreAccount = false, isVerifiedSeller = false
         </div>
       </div>
 
-      <div className="p-3 sm:p-4 lg:p-5">
-        <div className="flex items-start justify-between gap-2 mb-1.5 sm:mb-2">
-          <h3 className="font-display text-sm sm:text-base lg:text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+      <div className="p-2 sm:p-3">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <h3 className="font-display text-xs sm:text-sm font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
             {listing.title}
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs lg:text-sm text-muted-foreground mb-2 sm:mb-3">
+        <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground mb-1.5">
           <span className="flex items-center gap-1">
             <MapPin className="w-3 h-3" />
             {listing.location}

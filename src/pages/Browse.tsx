@@ -20,6 +20,7 @@ import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
 import { MobileOptimizedInput } from "@/components/ui/mobile-optimized-input";
 import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 import { CompactButton } from "@/components/ui/compact-button";
+import { SEOHead } from "@/components/SEOHead";
 
 interface ListingWithStore extends Listing {
   userId?: string;
@@ -224,7 +225,13 @@ const Browse = () => {
   }, [allListings, selectedCategory, selectedCondition, searchTerm, priceRange, sortBy]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Bläddra annonser - HiFi-utrustning till salu"
+        description="Hitta din dröm-HFi bland tusentals annonser. Förstärkare, högtalare, skivspelare, receivers och mer från toppmärken som Marantz, Technics, McIntosh."
+        keywords="HiFi annonser, köpa HiFi, begagnad ljudutrustning, förstärkare, högtalare, skivspelare, receivers, Marantz, Technics, McIntosh, vintage audio"
+        image="/og-browse.jpg"
+      />
       <Header />
 
       <main className="flex-1 pt-20 lg:pt-24 pb-12">

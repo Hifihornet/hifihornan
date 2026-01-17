@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, Menu, X, User, Heart, Settings, LogOut, Plus, MessageCircle, Bell, Shield, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, User, Heart, Settings, LogOut, Plus, MessageCircle, Bell, Shield, ChevronDown, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { cn as cnUtil } from "@/lib/utils";
-import useUnreadMessages from "@/hooks/useUnreadMessages";
+import { cn } from "@/lib/utils";
 import CreatorBadge from "@/components/CreatorBadge";
 import ProfileSearchDialog from "@/components/ProfileSearchDialog";
 import logo from "@/assets/logo.png";
@@ -25,13 +24,14 @@ const Header = () => {
   const isAdmin = false;
   const isModerator = false;
   
-  const unreadCount = useUnreadMessages();
+  const unreadCount = 0; // Temporarily disabled
 
   const hasAdminAccess = isCreator || isAdmin || isModerator;
 
   const navLinks = [
     { href: "/", label: "Hem" },
     { href: "/browse", label: "Annonser" },
+    { href: "/forum", label: "Forum" },
     { href: "/blogg", label: "Nyheter" },
     { href: "/showcase", label: "Showcase" },
   ];

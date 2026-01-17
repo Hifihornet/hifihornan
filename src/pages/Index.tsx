@@ -20,6 +20,9 @@ import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
 import { MobileOptimizedInput } from "@/components/ui/mobile-optimized-input";
 import { ResponsiveGrid } from "@/components/ui/responsive-grid";
 import { CompactButton } from "@/components/ui/compact-button";
+import { SEOHead } from "@/components/SEOHead";
+import { Chatbot } from "@/components/Chatbot";
+import { useGamification } from "@/hooks/useGamification";
 
 const Index = () => {
   // Force rebuild to reload env vars
@@ -33,6 +36,9 @@ const Index = () => {
   
   // Mobile optimization
   const { isMobile, isTablet, getResponsiveClass, getResponsiveValue } = useMobileOptimization();
+  
+  // Gamification
+  const { stats } = useGamification();
   
   const { data: listings = [] } = useQuery({
     queryKey: ["featured-listings"],
@@ -80,7 +86,13 @@ const Index = () => {
   const featuredListings = listings;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Sveriges största marknadsplats för HiFi-utrustning"
+        description="Köp och sälj begagnad HiFi-utrustning hos tusentals entusiaster. Förstärkare, högtalare, skivspelare, receivers och mycket mer. Trygga affärer och bra priser."
+        keywords="HiFi, ljud, förstärkare, högtalare, skivspelare, receivers, kassettdäck, CD-spelare, stereo, audio, sälja, köpa, begagnat, vintage, high-end"
+        image="/og-home.jpg"
+      />
       <Header />
 
       {/* Hero Section */}
@@ -218,9 +230,9 @@ const Index = () => {
 
           <ResponsiveGrid
             mobileCols={1}
-            tabletCols={2}
-            desktopCols={3}
-            gap={getResponsiveValue('gap-4', 'gap-5', 'gap-6')}
+            tabletCols={3}
+            desktopCols={4}
+            gap={getResponsiveValue('gap-3', 'gap-4', 'gap-5')}
           >
             {featuredListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
@@ -298,6 +310,9 @@ const Index = () => {
       </section>
 
       <Footer />
+      
+      {/* Chatbot */}
+      <Chatbot />
     </div>
   );
 };

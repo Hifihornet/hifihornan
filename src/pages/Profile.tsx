@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, MessageCircle } from "lucide-react";
+import { User, MapPin, Calendar, Loader2, Trash2, Upload, X, MessageCircle, Trophy, Star, Target } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ListingCard from "@/components/ListingCard";
@@ -24,6 +24,10 @@ import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useGamification } from "@/hooks/useGamification";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +75,42 @@ const Profile = () => {
   // Error handling
   const { showError, showSuccess } = useErrorToast();
   
+  // Gamification
+  const { stats, achievements, loading: gamificationLoading } = useGamification();
+  
+  // Helper function for achievement progress
+  const getAchievementProgress = (achievement: any, userStats: any) => {
+    if (achievement.unlocked) return 100;
+    
+    switch (achievement.type) {
+      case 'listing':
+        return Math.min(100, (userStats?.totalListings || 0) / achievement.requirement * 100);
+      case 'sale':
+        return Math.min(100, (userStats?.totalSales || 0) / achievement.requirement * 100);
+      case 'purchase':
+        return Math.min(100, (userStats?.totalPurchases || 0) / achievement.requirement * 100);
+      case 'rating':
+        return Math.min(100, (userStats?.averageRating || 0) / achievement.requirement * 100);
+      default:
+        return 0;
+    }
+  };
+
+  // Fallback data om gamification misslyckas
+  const safeStats = stats || {
+    level: 1,
+    points: 0,
+    totalListings: 0,
+    totalSales: 0,
+    totalPurchases: 0,
+    averageRating: 0,
+    badges: [],
+    nextLevelPoints: 500,
+    progressToNextLevel: 0
+  };
+
+  const safeAchievements = achievements || [];
+  
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<ListingWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +122,95 @@ const Profile = () => {
   const [canSendDirectMessage, setCanSendDirectMessage] = useState(false);
   const [isTargetAdmin, setIsTargetAdmin] = useState(false);
   const [deletingListing, setDeletingListing] = useState<string | null>(null);
+
+  // Dynamisk data för achievements baserat på användarens faktiska aktivitet
+  const userAchievements = [
+    {
+      id: 'first_listing',
+      name: 'Första annons',
+      description: 'Skapa din första annons',
+      icon: '🎯',
+      unlocked: false, // Återställd till false
+      points: 50
+    },
+    {
+      id: 'first_sale',
+      name: 'Första försäljningen',
+      description: 'Sälj din första vara',
+      icon: '💰',
+      unlocked: false, // Återställd till false
+      points: 75
+    },
+    {
+      id: 'first_purchase',
+      name: 'Första köpet',
+      description: 'Köp din första vara',
+      icon: '🛒',
+      unlocked: false, // Återställd till false
+      points: 50
+    },
+    {
+      id: 'perfect_rating',
+      name: 'Perfekt rating',
+      description: 'Få 5 stjärnor i betyg',
+      icon: '⭐',
+      unlocked: false, // Återställd till false
+      points: 100
+    },
+    {
+      id: 'five_listings',
+      name: '5 annonser',
+      description: 'Skapa 5 annonser',
+      icon: '📝',
+      unlocked: false, // Återställd till false
+      points: 100
+    },
+    {
+      id: 'five_sales',
+      name: '5 försäljningar',
+      description: 'Sälj 5 varor',
+      icon: '💵',
+      unlocked: false, // Återställd till false
+      points: 125
+    },
+    {
+      id: 'five_purchases',
+      name: '5 köp',
+      description: 'Köp 5 varor',
+      icon: '🛒',
+      unlocked: false, // Återställd till false
+      points: 75
+    },
+    {
+      id: 'ten_listings',
+      name: '10 annonser',
+      description: 'Skapa 10 annonser',
+      icon: '📈',
+      unlocked: false, // Återställd till false
+      points: 150
+    },
+    {
+      id: 'ten_sales',
+      name: '10 försäljningar',
+      description: 'Sälj 10 varor',
+      icon: '💎',
+      unlocked: false, // Återställd till false
+      points: 200
+    }
+  ];
+
+  const unlockedAchievements = userAchievements.filter(a => a.unlocked);
+  const isHiFiLegend = false; // Återställd till false
+  const totalPoints = 0; // Återställd till 0
+  const userLevel = 1; // Återställd till 1
+
+  // Debug logging
+  console.log('ACHIEVEMENTS DEBUG:', {
+    listings: listings.length,
+    unlockedAchievements: unlockedAchievements.length,
+    isHiFiLegend,
+    userAchievements: userAchievements.map(a => ({ id: a.id, name: a.name, unlocked: a.unlocked }))
+  });
 
   const isOwnProfile = user?.id === userId;
 
@@ -394,7 +523,7 @@ const Profile = () => {
           {/* Profile Header */}
           <div className="bg-card border border-border rounded-xl p-6 md:p-8 mb-8">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div className="relative">
+              <div className="relative group">
                 <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden">
                   {profile.avatar_url ? (
                     <img 
@@ -403,20 +532,38 @@ const Profile = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="w-10 h-10 text-primary-foreground" />
+                    <User className="w-8 h-8 text-primary/50" />
+                  )}
+                  
+                  {/* HiFi Legend Badge */}
+                  {isOwnProfile && isHiFiLegend && (
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center border-2 border-background shadow-lg animate-pulse">
+                      <span className="text-sm animate-bounce">👑</span>
+                    </div>
+                  )}
+                  
+                  {/* Guldram för HiFi Legend */}
+                  {isOwnProfile && isHiFiLegend && (
+                    <div className="absolute inset-0 rounded-full border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/20 animate-spin-slow"></div>
+                  )}
+                  
+                  {/* Upload knapp - bara synlig på hover */}
+                  {isOwnProfile && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/50 rounded-full">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleUploadProfileImage}
+                        />
+                        <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg">
+                          <Upload className="w-4 h-4 text-primary" />
+                        </div>
+                      </label>
+                    </div>
                   )}
                 </div>
-                {isOwnProfile && (
-                  <label className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg">
-                    <Upload className="w-3 h-3" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleUploadProfileImage}
-                    />
-                  </label>
-                )}
                 {isCreator && <CreatorBadge size="md" className="-top-1 -right-1" />}
                 {isStore && !isCreator && <StoreBadge size="md" className="-bottom-0.5 -right-0.5" />}
               </div>
@@ -452,6 +599,24 @@ const Profile = () => {
                     Medlem sedan {memberSince}
                   </span>
                 </div>
+
+                {/* Gamification Stats for own profile */}
+                {isOwnProfile && (
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-2">
+                    <span className="flex items-center gap-1">
+                      <Trophy className="w-4 h-4 text-primary" />
+                      Level {userLevel}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-primary" />
+                      {totalPoints} poäng
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Target className="w-4 h-4 text-primary" />
+                      {unlockedAchievements.length} badges
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2">
@@ -517,11 +682,12 @@ const Profile = () => {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="listings" className="space-y-6">
+          <Tabs defaultValue="listings" key={userId} className="space-y-6">
             <TabsList className="bg-card border border-border">
               <TabsTrigger value="listings">Annonser ({listings.length})</TabsTrigger>
               <TabsTrigger value="reviews">Omdömen</TabsTrigger>
               <TabsTrigger value="about">Om mig</TabsTrigger>
+              <TabsTrigger value="achievements">Achievements</TabsTrigger>
             </TabsList>
 
             <TabsContent value="listings">
@@ -621,54 +787,178 @@ const Profile = () => {
                 {/* Setup Images Section */}
                 <div className="bg-card border border-border rounded-xl p-6">
                   <h2 className="font-display text-xl font-semibold mb-4">
-                    Min setup 🎧
+                    Min HiFi-setup
                   </h2>
-
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    {(profile.setup_images || []).map((image, index) => (
-                      <div key={index} className="relative group aspect-square">
-                        <img
-                          src={image}
-                          alt={`Setup ${index + 1}`}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                        {isOwnProfile && (
-                          <button
-                            onClick={() => handleDeleteSetupImage(image)}
-                            className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
+                  
+                  {profile.setup_images && profile.setup_images.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {profile.setup_images.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={image}
+                            alt={`Setup bild ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border border-border"
+                          />
+                          {isOwnProfile && (
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDeleteSetupImage(image)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">
+                        {isOwnProfile 
+                          ? "Du har inte lagt till några bilder på din HiFi-setup än."
+                          : "Inga setup-bilder tillagda."}
+                      </p>
+                    </div>
+                  )}
+                  
                   {isOwnProfile && (
-                    <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
-                      {uploadingImage ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                      ) : (
-                        <>
-                          <Upload className="w-5 h-5 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Ladda upp bild</span>
-                        </>
-                      )}
+                    <div className="mt-4">
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleUploadSetupImage}
-                        className="hidden"
                         disabled={uploadingImage}
+                        className="hidden"
+                        id="setup-image-upload"
                       />
-                    </label>
+                      <label htmlFor="setup-image-upload">
+                        <Button variant="outline" disabled={uploadingImage} asChild>
+                          <span className="cursor-pointer">
+                            {uploadingImage ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Laddar upp...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Ladda upp bild
+                              </>
+                            )}
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
                   )}
+                </div>
+              </div>
+            </TabsContent>
 
-                  {!isOwnProfile && (profile.setup_images || []).length === 0 && (
-                    <p className="text-muted-foreground italic text-center py-8">
-                      Inga setup-bilder uppladdade.
-                    </p>
-                  )}
+            {/* Achievements Tab - Snygg och interaktiv version */}
+            <TabsContent value="achievements">
+              <div className="space-y-6">
+                {/* Header med stats */}
+                <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-display text-2xl font-bold text-primary">Achievements</h2>
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-6 h-6 text-primary" />
+                      <span className="text-sm font-medium text-primary">{unlockedAchievements.length}/9 Upplåsta</span>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground">
+                    {unlockedAchievements.length === 9 
+                      ? "Du har låst upp alla achievements och är nu en HiFi Legend!" 
+                      : `Lås upp ${9 - unlockedAchievements.length} till achievements för att bli en HiFi Legend!`}
+                  </p>
+                </div>
+
+                {/* Achievements Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {userAchievements.map((achievement) => (
+                    <div 
+                      key={achievement.id} 
+                      className={`group relative overflow-hidden rounded-xl border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
+                        achievement.unlocked 
+                          ? 'border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 hover:shadow-primary/10' 
+                          : 'border-border bg-muted/30 hover:shadow-muted/20 opacity-75'
+                      }`}
+                    >
+                      <div className="absolute top-2 right-2">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          achievement.unlocked 
+                            ? 'bg-primary/20' 
+                            : 'bg-muted/50'
+                        }`}>
+                          {achievement.unlocked ? (
+                            <Trophy className="w-4 h-4 text-primary" />
+                          ) : (
+                            <div className="w-4 h-4 text-muted-foreground">🔒</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                          achievement.unlocked 
+                            ? 'bg-primary/20' 
+                            : 'bg-muted/50'
+                        }`}>
+                          <span className={`text-2xl ${achievement.unlocked ? '' : 'opacity-50'}`}>
+                            {achievement.icon}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className={`font-bold ${achievement.unlocked ? 'text-foreground' : 'text-foreground/70'}`}>
+                            {achievement.name}
+                          </h3>
+                          <p className={`text-sm ${achievement.unlocked ? 'text-muted-foreground' : 'text-muted-foreground/70'}`}>
+                            {achievement.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Status</span>
+                          <span className={`font-medium ${
+                            achievement.unlocked 
+                              ? 'text-primary' 
+                              : 'text-muted-foreground/70'
+                          }`}>
+                            {achievement.unlocked ? 'Upplåst!' : 'Låst'}
+                          </span>
+                        </div>
+                        <div className={`w-full rounded-full h-3 overflow-hidden ${
+                          achievement.unlocked 
+                            ? 'bg-primary/20' 
+                            : 'bg-muted/50'
+                        }`}>
+                          <div className={`h-3 rounded-full transition-all duration-500 ${
+                            achievement.unlocked 
+                              ? 'bg-gradient-to-r from-primary to-primary/80' 
+                              : 'bg-gradient-to-r from-muted to-muted/60'
+                          }`} style={{width: achievement.unlocked ? '100%' : '0%'}}></div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {achievement.unlocked 
+                            ? `${achievement.points} poäng intjänad!`
+                            : `Krav: ${achievement.points} poäng`
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Tips */}
+                <div className="bg-muted/50 border border-border rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="w-5 h-5 text-primary" />
+                    <span className="font-medium text-foreground">Tips!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Fortsätt skapa annonser och interagera med communityt för att låsa upp fler achievements och samla poäng! Lås upp alla 9 achievements för att bli en HiFi Legend!
+                  </p>
                 </div>
               </div>
             </TabsContent>

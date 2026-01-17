@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, MapPin, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,8 @@ import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
 import { MobileOptimizedInput } from "@/components/ui/mobile-optimized-input";
 import { useErrorToast } from "@/hooks/useErrorToast";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useCamera } from "@/hooks/useCamera";
 
 const listingSchema = z.object({
   title: z.string().min(3, "Titeln måste vara minst 3 tecken").max(200, "Titeln får max vara 200 tecken"),
@@ -43,6 +45,10 @@ const CreateListing = () => {
   // Error handling
   const { showError, showSuccess } = useErrorToast();
   
+  // GPS and Camera hooks
+  const { getCurrentLocation, getCityFromLocation, loading: locationLoading } = useGeolocation();
+  const { images: cameraImages, openCamera, openGallery, removeImage, fileInputRef } = useCamera();
+  
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -53,11 +59,32 @@ const CreateListing = () => {
     year: "",
     location: "",
     hasAmplifier: false,
+    hasTapeDeck: false,
+    hasCdPlayer: false,
+    hasPhono: false,
+    bluetooth: false,
+    remote: false,
+    originalBox: false,
+    manual: false,
     hasTurntable: false,
     hasTonearm: false,
     isDigital: false,
+    images: [] as string[],
   });
   const [images, setImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!formData.location) {
+      getCurrentLocation().then(location => {
+        if (location) {
+          const city = getCityFromLocation(location);
+          setFormData(prev => ({ ...prev, location: city }));
+        }
+      }).catch(err => {
+        console.log('Could not get location:', err);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -192,7 +219,70 @@ const CreateListing = () => {
           <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
             {/* Images */}
             <section className="p-4 sm:p-6 rounded-xl bg-card border border-border">
-              <h2 className="font-display font-semibold text-foreground mb-4 text-lg sm:text-xl">Bilder *</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-semibold text-foreground text-lg sm:text-xl">Bilder *</h2>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={openCamera}
+                    disabled={cameraImages.length >= 10}
+                    className="flex items-center gap-2"
+                  >
+                    <Camera className="w-4 h-4" />
+                    {isMobile ? 'Kamera' : 'Ta bild'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={openGallery}
+                    disabled={cameraImages.length >= 10}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {isMobile ? 'Galleri' : 'Välj filer'}
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Camera images preview */}
+              {cameraImages.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-4">
+                  {cameraImages.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={image.preview}
+                        alt={`Bild ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  const newImages = files.map(file => URL.createObjectURL(file));
+                  setImages(prev => [...prev, ...newImages]);
+                }}
+                className="hidden"
+              />
+              
               <ImageUpload images={images} onImagesChange={setImages} />
             </section>
 
