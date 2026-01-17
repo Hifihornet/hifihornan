@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import CreatorBadge from "@/components/CreatorBadge";
@@ -18,11 +19,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  
-  // Temporarily disable user roles until we have the hook
-  const isCreator = false;
-  const isAdmin = false;
-  const isModerator = false;
+  const { isCreator, isAdmin, isModerator } = useUserRoles(user?.id);
   
   const unreadCount = 0; // Temporarily disabled
 

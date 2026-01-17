@@ -37,6 +37,7 @@ export const useUserRoles = (userId: string | undefined) => {
       if (userId === '2998bdd8-41cf-41d3-a706-14ebd8ec7203') {
         setRoles(['admin']);
       } else {
+        // No admin role for other users
         setRoles([]);
       }
       
