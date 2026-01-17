@@ -1,5 +1,11 @@
-import { useNavigate } from "react-router-dom";
-import { MapPin, Calendar, Eye, Share2, Link as LinkIcon, Facebook } from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Heart, MapPin, Calendar, User, Eye, Share2, Facebook, Link as LinkIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EnhancedCard, GradientText } from "@/components/ui/enhanced-card";
+import { formatDistanceToNow } from "date-fns";
+import { sv } from "date-fns/locale";
 import { Listing, categories, conditions } from "@/data/listings";
 import StoreBadge from "./StoreBadge";
 import VerifiedBadge from "./VerifiedBadge";

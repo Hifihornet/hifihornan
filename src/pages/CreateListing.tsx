@@ -13,6 +13,11 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { useMobileOptimization } from "@/hooks/useMobileOptimization";
+import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
+import { MobileOptimizedInput } from "@/components/ui/mobile-optimized-input";
+import { useErrorToast } from "@/hooks/useErrorToast";
 
 const listingSchema = z.object({
   title: z.string().min(3, "Titeln måste vara minst 3 tecken").max(200, "Titeln får max vara 200 tecken"),
@@ -28,6 +33,15 @@ const CreateListing = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  
+  // Scroll to top on route change
+  useScrollToTop();
+  
+  // Mobile optimization
+  const { isMobile, isTablet, getResponsiveClass, getResponsiveValue } = useMobileOptimization();
+  
+  // Error handling
+  const { showError, showSuccess } = useErrorToast();
   
   const [formData, setFormData] = useState({
     title: "",
@@ -164,32 +178,32 @@ const CreateListing = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-24 pb-12">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="mb-8">
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
+      <main className="flex-1 pt-20 sm:pt-24 pb-8 sm:pb-12">
+        <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
               Skapa ny annons
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Fyll i informationen nedan för att publicera din annons
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
             {/* Images */}
-            <section className="p-6 rounded-xl bg-card border border-border">
-              <h2 className="font-display font-semibold text-foreground mb-4">Bilder *</h2>
+            <section className="p-4 sm:p-6 rounded-xl bg-card border border-border">
+              <h2 className="font-display font-semibold text-foreground mb-4 text-lg sm:text-xl">Bilder *</h2>
               <ImageUpload images={images} onImagesChange={setImages} />
             </section>
 
             {/* Basic Info */}
-            <section className="p-6 rounded-xl bg-card border border-border">
-              <h2 className="font-display font-semibold text-foreground mb-4">
+            <section className="p-4 sm:p-6 rounded-xl bg-card border border-border">
+              <h2 className="font-display font-semibold text-foreground mb-4 text-lg sm:text-xl">
                 Grundläggande information
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">
+                  <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                     Titel *
                   </label>
                   <Input
@@ -199,12 +213,13 @@ const CreateListing = () => {
                     placeholder="t.ex. Marantz 2270 Stereo Receiver"
                     maxLength={200}
                     required
+                    className="text-base sm:text-lg h-12 sm:h-14"
                   />
                   {errors.title && <p className="text-destructive text-sm mt-1">{errors.title}</p>}
                 </div>
 
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1.5 block">
+                  <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                     Beskrivning * <span className="text-xs">({formData.description.length}/5000)</span>
                   </label>
                   <Textarea
@@ -215,13 +230,14 @@ const CreateListing = () => {
                     rows={4}
                     maxLength={5000}
                     required
+                    className="text-base sm:text-lg resize-none"
                   />
                   {errors.description && <p className="text-destructive text-sm mt-1">{errors.description}</p>}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
+                    <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                       Pris (kr) *
                     </label>
                     <Input
@@ -233,11 +249,12 @@ const CreateListing = () => {
                       min={1}
                       max={10000000}
                       required
+                      className="text-base sm:text-lg h-12 sm:h-14"
                     />
                     {errors.price && <p className="text-destructive text-sm mt-1">{errors.price}</p>}
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
+                    <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                       Plats *
                     </label>
                     <Input
@@ -247,6 +264,7 @@ const CreateListing = () => {
                       placeholder="t.ex. Stockholm"
                       maxLength={200}
                       required
+                      className="text-base sm:text-lg h-12 sm:h-14"
                     />
                     {errors.location && <p className="text-destructive text-sm mt-1">{errors.location}</p>}
                   </div>
@@ -270,14 +288,14 @@ const CreateListing = () => {
             </section>
 
             {/* Product Details */}
-            <section className="p-6 rounded-xl bg-card border border-border">
-              <h2 className="font-display font-semibold text-foreground mb-4">
+            <section className="p-4 sm:p-6 rounded-xl bg-card border border-border">
+              <h2 className="font-display font-semibold text-foreground mb-4 text-lg sm:text-xl">
                 Produktdetaljer
               </h2>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="relative">
+                    <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                       Kategori *
                     </label>
                     <select
@@ -285,18 +303,23 @@ const CreateListing = () => {
                       value={formData.category}
                       onChange={handleChange}
                       required
-                      className="flex h-12 w-full rounded-lg border border-border bg-secondary/50 px-4 py-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      className="flex h-12 sm:h-14 w-full rounded-lg border border-border bg-background px-4 py-3 text-base sm:text-lg ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 appearance-none cursor-pointer hover:bg-accent/50 transition-colors pr-10"
                     >
-                      <option value="">Välj kategori</option>
+                      <option value="" className="text-muted-foreground">Välj kategori</option>
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
+                        <option key={cat.id} value={cat.id} className="text-foreground">
                           {cat.icon} {cat.label}
                         </option>
                       ))}
                     </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none top-7">
+                      <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
+                  <div className="relative">
+                    <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                       Skick *
                     </label>
                     <select
@@ -304,22 +327,27 @@ const CreateListing = () => {
                       value={formData.condition}
                       onChange={handleChange}
                       required
-                      className="flex h-12 w-full rounded-lg border border-border bg-secondary/50 px-4 py-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      className="flex h-12 sm:h-14 w-full rounded-lg border border-border bg-background px-4 py-3 text-base sm:text-lg ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 appearance-none cursor-pointer hover:bg-accent/50 transition-colors pr-10"
                     >
-                      <option value="">Välj skick</option>
+                      <option value="" className="text-muted-foreground">Välj skick</option>
                       {conditions.map((cond) => (
-                        <option key={cond.id} value={cond.id}>
+                        <option key={cond.id} value={cond.id} className="text-foreground">
                           {cond.label}
                         </option>
                       ))}
                     </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none top-7">
+                      <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
 
                 {/* HiFi-specifika fält */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
+                    <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                       Märke
                     </label>
                     <Input
@@ -328,10 +356,11 @@ const CreateListing = () => {
                       onChange={handleChange}
                       placeholder="t.ex. Marantz, Rega, McIntosh"
                       maxLength={100}
+                      className="text-base sm:text-lg h-12 sm:h-14"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
+                    <label className="text-sm sm:text-base text-muted-foreground mb-1.5 block">
                       Årt
                     </label>
                     <Input
@@ -342,52 +371,53 @@ const CreateListing = () => {
                       placeholder="t.ex. 1972"
                       min="1900"
                       max={new Date().getFullYear()}
+                      className="text-base sm:text-lg h-12 sm:h-14"
                     />
                   </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1.5 block">
+                  <div className="sm:col-span-2">
+                    <label className="text-sm sm:text-base text-muted-foreground mb-3 block">
                       HiFi-komponenter
                     </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
                         <input
                           type="checkbox"
                           name="hasAmplifier"
                           checked={formData.hasAmplifier}
                           onChange={handleChange}
-                          className="w-4 h-4 rounded border-border"
+                          className="w-4 h-4 sm:w-5 sm:h-5 rounded border-border"
                         />
-                        <span className="text-sm">Förstärkare</span>
+                        <span className="text-sm sm:text-base">Förstärkare</span>
                       </label>
-                      <label className="flex items-center gap-2">
+                      <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
                         <input
                           type="checkbox"
                           name="hasTurntable"
                           checked={formData.hasTurntable}
                           onChange={handleChange}
-                          className="w-4 h-4 rounded border-border"
+                          className="w-4 h-4 sm:w-5 sm:h-5 rounded border-border"
                         />
-                        <span className="text-sm">Spelare</span>
+                        <span className="text-sm sm:text-base">Spelare</span>
                       </label>
-                      <label className="flex items-center gap-2">
+                      <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
                         <input
                           type="checkbox"
                           name="hasTonearm"
                           checked={formData.hasTonearm}
                           onChange={handleChange}
-                          className="w-4 h-4 rounded border-border"
+                          className="w-4 h-4 sm:w-5 sm:h-5 rounded border-border"
                         />
-                        <span className="text-sm">Tonarm</span>
+                        <span className="text-sm sm:text-base">Tonarm</span>
                       </label>
-                      <label className="flex items-center gap-2">
+                      <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
                         <input
                           type="checkbox"
                           name="isDigital"
                           checked={formData.isDigital}
                           onChange={handleChange}
-                          className="w-4 h-4 rounded border-border"
+                          className="w-4 h-4 sm:w-5 sm:h-5 rounded border-border"
                         />
-                        <span className="text-sm">Digital</span>
+                        <span className="text-sm sm:text-base">Digital</span>
                       </label>
                     </div>
                   </div>
@@ -401,17 +431,17 @@ const CreateListing = () => {
                 type="submit" 
                 variant="glow" 
                 size="xl" 
-                className="flex-1"
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg"
                 disabled={submitting}
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                     Publicerar...
                   </>
                 ) : (
                   <>
-                    <Upload className="w-4 h-4 mr-2" />
+                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Publicera annons
                   </>
                 )}
@@ -422,6 +452,7 @@ const CreateListing = () => {
                 size="xl"
                 onClick={() => navigate(-1)}
                 disabled={submitting}
+                className="h-14 sm:h-16 text-base sm:text-lg"
               >
                 Avbryt
               </Button>

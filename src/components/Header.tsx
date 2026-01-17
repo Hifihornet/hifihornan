@@ -1,21 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Search, ShoppingCart, Menu, X, User, Heart, Settings, LogOut, Plus, MessageCircle, Bell, Shield, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Plus, User, LogOut, MessageCircle, Shield, Search, Heart, Bell, ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
-import useUserRoles from "@/hooks/useUserRoles";
+import { toast } from "sonner";
+import { cn as cnUtil } from "@/lib/utils";
 import useUnreadMessages from "@/hooks/useUnreadMessages";
 import CreatorBadge from "@/components/CreatorBadge";
 import ProfileSearchDialog from "@/components/ProfileSearchDialog";
 import logo from "@/assets/logo.png";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -23,7 +19,12 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { isCreator, isAdmin, isModerator } = useUserRoles(user?.id);
+  
+  // Temporarily disable user roles until we have the hook
+  const isCreator = false;
+  const isAdmin = false;
+  const isModerator = false;
+  
   const unreadCount = useUnreadMessages();
 
   const hasAdminAccess = isCreator || isAdmin || isModerator;
@@ -58,7 +59,7 @@ const Header = () => {
               <Link
                 key={link.href}
                 to={link.href}
-                className={cn(
+                className={cnUtil(
                   "text-sm font-medium transition-colors hover:text-primary",
                   location.pathname === link.href ? "text-primary" : "text-muted-foreground"
                 )}
@@ -185,7 +186,7 @@ const Header = () => {
                   key={link.href}
                   to={link.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className={cn(
+                  className={cnUtil(
                     "px-4 py-3 text-sm font-medium transition-colors hover:text-primary border-b border-border/50",
                     location.pathname === link.href ? "text-primary" : "text-muted-foreground"
                   )}
@@ -222,7 +223,7 @@ const Header = () => {
                             </span>
                           )}
                         </span>
-                        <ChevronDown className={cn(
+                        <ChevronDown className={cnUtil(
                           "w-4 h-4 transition-transform duration-200",
                           isProfileOpen && "rotate-180"
                         )} />
@@ -321,7 +322,7 @@ const Header = () => {
   );
 };
 
-function cn(...classes: (string | undefined | boolean)[]) {
+function cnUtil(...classes: (string | undefined | boolean)[]) {
   return classes.filter(Boolean).join(" ");
 }
 

@@ -18,6 +18,10 @@ import useUserRoles from "@/hooks/useUserRoles";
 import { useIsUserOnline } from "@/hooks/useOnlinePresence";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { useMobileOptimization } from "@/hooks/useMobileOptimization";
+import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -57,6 +61,16 @@ const Profile = () => {
   const { user } = useAuth();
   const { isCreator, isStore, isAdmin, isModerator } = useUserRoles(userId);
   const isUserOnline = useIsUserOnline(userId);
+  
+  // Scroll to top on route change
+  useScrollToTop();
+  
+  // Mobile optimization
+  const { isMobile, isTablet, getResponsiveClass, getResponsiveValue } = useMobileOptimization();
+  
+  // Error handling
+  const { showError, showSuccess } = useErrorToast();
+  
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<ListingWithStatus[]>([]);
   const [loading, setLoading] = useState(true);

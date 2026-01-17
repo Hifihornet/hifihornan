@@ -17,12 +17,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import ChatDialog from "@/components/ChatDialog";
 import StoreBadge from "@/components/StoreBadge";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { useMobileOptimization } from "@/hooks/useMobileOptimization";
+import { MobileOptimizedButton } from "@/components/ui/mobile-optimized-button";
+import { useErrorToast } from "@/hooks/useErrorToast";
 
 const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   // const { addToRecentlyViewed } = useRecentlyViewed();
+  
+  // Scroll to top on route change
+  useScrollToTop();
+  
+  // Mobile optimization
+  const { isMobile, isTablet, getResponsiveClass, getResponsiveValue } = useMobileOptimization();
+  
+  // Error handling
+  const { showError, showSuccess } = useErrorToast();
+  
   const [listing, setListing] = useState<Listing | null>(null);
   const [listingStatus, setListingStatus] = useState<string>("active");
   const [sellerId, setSellerId] = useState<string | null>(null);
