@@ -477,6 +477,19 @@ const Profile = () => {
     }
   };
 
+  // Funktion för att få visningsnamn
+  const getDisplayName = (profile: Profile | null, user: any) => {
+    if (!profile || !user) return "Okänd användare";
+    
+    // Om display_name är "Användare" eller tomt, använd e-post användarnamn
+    if (!profile.display_name || profile.display_name === "Användare") {
+      const emailUsername = user.email?.split('@')[0] || "Användare";
+      return emailUsername;
+    }
+    
+    return profile.display_name;
+  };
+
   const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile);
   };
@@ -574,7 +587,7 @@ const Profile = () => {
                 <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2 flex-wrap">
                   <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-                    {profile.display_name || "Användare"}
+                    {getDisplayName(profile, user)}
                   </h1>
                   {isAdmin && <AdminBadge showLabel size="md" />}
                   {isCreator && !isAdmin && <CreatorBadge size="md" />}

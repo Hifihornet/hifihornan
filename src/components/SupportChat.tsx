@@ -61,11 +61,23 @@ const SupportChat = () => {
 
     const checkUnread = async () => {
       try {
+        console.log("Checking unread messages for user:", user.id);
+        
+        // Först hämta konversationer
         const { data: conversations, error: convError } = await supabase
           .from("conversations")
           .select("id")
           .is("listing_id", null)
           .eq("buyer_id", user.id);
+
+        console.log("Conversations query result:", { data: conversations, error: convError });
+
+        // Om det är ett schema-fel (tabellen finns inte), hantera gracefully
+        if (convError && convError.code === 'PGRST116') {
+          console.log("Conversations table does not exist, skipping unread check");
+          setUnreadCount(0);
+          return;
+        }
 
         if (convError) {
           console.error("Error fetching conversations:", convError);
@@ -73,26 +85,71 @@ const SupportChat = () => {
           return;
         }
 
-        if (conversations && conversations.length > 0) {
-          const conversationIds = conversations.map((c) => c.id);
-          const { count, error: msgError } = await supabase
-            .from("messages")
-            .select("*", { count: "exact", head: true })
-            .in("conversation_id", conversationIds)
-            .neq("sender_id", user.id)
-            .is("read_at", null);
+        if (!conversations || conversations.length === 0) {
+          console.log("No conversations found for user");
+          setUnreadCount(0);
+          return;
+        }
 
-          if (msgError) {
-            console.error("Error fetching unread messages:", msgError);
-            setUnreadCount(0);
+        console.log("Found conversations:", conversations);
+        const conversationIds = conversations.map((c) => c.id);
+        console.log("Checking messages for conversations:", conversationIds);
+        
+        // Förenkla messages query - ta bort read_at eftersom kolumnen inte finns
+        const { data: messages, error: msgError } = await supabase
+          .from("messages")
+          .select("id, conversation_id, sender_id")
+          .in("conversation_id", conversationIds)
+          .neq("sender_id", user.id);
+
+        console.log("Messages query result:", { data: messages, error: msgError });
+
+        // Om det är ett schema-fel (tabellen finns inte), hantera gracefully
+        if (msgError && msgError.code === 'PGRST116') {
+          console.log("Messages table does not exist, using conversation count");
+          setUnreadCount(conversations.length);
+          return;
+        }
+
+        // Om kolumnen read_at inte finns, använd bara antalet meddelanden från andra
+        if (msgError && msgError.code === '42703' && msgError.message.includes('read_at')) {
+          console.log("read_at column does not exist, using simple message count");
+          // Försök igen utan read_at filter
+          const { data: simpleMessages, error: simpleError } = await supabase
+            .from("messages")
+            .select("id, conversation_id, sender_id")
+            .in("conversation_id", conversationIds)
+            .neq("sender_id", user.id);
+          
+          if (simpleError) {
+            console.error("Error with simple messages query:", simpleError);
+            setUnreadCount(conversations.length);
             return;
           }
-
-          setUnreadCount(count || 0);
+          
+          const unreadCount = simpleMessages ? simpleMessages.length : conversations.length;
+          console.log("Simple unread count:", unreadCount);
+          setUnreadCount(unreadCount);
+          return;
         }
+
+        if (msgError) {
+          console.error("Error fetching unread messages:", msgError);
+          setUnreadCount(conversations.length);
+          return;
+        }
+
+        const unreadCount = messages ? messages.length : conversations.length;
+        console.log("Unread count:", unreadCount);
+        setUnreadCount(unreadCount);
+        
       } catch (error) {
         console.error("Error in checkUnread:", error);
         setUnreadCount(0);
+        
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error("Request timeout in checkUnread");
+        }
       }
     };
 

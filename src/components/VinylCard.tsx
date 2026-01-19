@@ -119,14 +119,33 @@ const VinylCard = ({
       <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
         <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0">
           {vinyl.image_url ? (
-            <img
-              src={vinyl.image_url}
-              alt={`${vinyl.artist} - ${vinyl.title}`}
-              className="w-full h-full object-cover rounded"
-            />
+            <>
+              <img
+                src={vinyl.image_url}
+                alt={`${vinyl.artist} - ${vinyl.title}`}
+                className="w-full h-full object-cover rounded"
+                onError={(e) => {
+                  console.error("Vinyl image failed to load:", vinyl.image_url, e);
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) {
+                    fallback.style.display = 'flex';
+                  }
+                }}
+                onLoad={() => {
+                  console.log("Vinyl image loaded successfully:", vinyl.image_url);
+                }}
+              />
+              <div 
+                className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100 rounded"
+                style={{ display: 'none' }}
+              >
+                <Music className="w-6 h-6" />
+              </div>
+            </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Music className="w-6 h-6 text-gray-400" />
+            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100 rounded">
+              <Music className="w-6 h-6" />
             </div>
           )}
         </div>
@@ -162,14 +181,33 @@ const VinylCard = ({
         <div className="relative">
           <div className={`aspect-square bg-gray-100 relative ${!vinyl.in_stock ? 'opacity-75' : ''}`}>
             {vinyl.image_url ? (
-              <img
-                src={vinyl.image_url}
-                alt={`${vinyl.artist} - ${vinyl.title}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <>
+                <img
+                  src={vinyl.image_url}
+                  alt={`${vinyl.artist} - ${vinyl.title}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    console.error("Vinyl image failed to load:", vinyl.image_url, e);
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) {
+                      fallback.style.display = 'flex';
+                    }
+                  }}
+                  onLoad={() => {
+                    console.log("Vinyl image loaded successfully:", vinyl.image_url);
+                  }}
+                />
+                <div 
+                  className="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-100"
+                  style={{ display: 'none' }}
+                >
+                  <Music className="w-12 h-12" />
+                </div>
+              </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Music className="w-12 h-12 text-gray-400" />
+              <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                <Music className="w-12 h-12" />
               </div>
             )}
             
@@ -261,14 +299,33 @@ const VinylCard = ({
             <div>
               <div className="aspect-square bg-gray-100 rounded-lg mb-4">
                 {vinyl.image_url ? (
-                  <img
-                    src={vinyl.image_url}
-                    alt={`${vinyl.artist} - ${vinyl.title}`}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
+                  <>
+                    <img
+                      src={vinyl.image_url}
+                      alt={`${vinyl.artist} - ${vinyl.title}`}
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={(e) => {
+                        console.error("Vinyl image failed to load:", vinyl.image_url, e);
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) {
+                          fallback.style.display = 'flex';
+                        }
+                      }}
+                      onLoad={() => {
+                        console.log("Vinyl image loaded successfully:", vinyl.image_url);
+                      }}
+                    />
+                    <div 
+                      className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100 rounded-lg"
+                      style={{ display: 'none' }}
+                    >
+                      <Music className="w-16 h-16" />
+                    </div>
+                  </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Music className="w-16 h-16 text-gray-400" />
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100 rounded-lg">
+                    <Music className="w-16 h-16" />
                   </div>
                 )}
               </div>

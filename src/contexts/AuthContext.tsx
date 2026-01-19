@@ -41,6 +41,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, displayName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
+    // Generera automatiskt namn om tomt
+    if (!displayName || displayName.trim().length === 0) {
+      const emailUsername = email.split('@')[0];
+      const randomSuffix = Math.floor(Math.random() * 1000);
+      displayName = `${emailUsername}${randomSuffix}`;
+      console.log("Generated display name:", displayName);
+    }
+    
     console.log("Signing up with:", { email, displayName }); // Debug logging
     
     const { data, error } = await supabase.auth.signUp({

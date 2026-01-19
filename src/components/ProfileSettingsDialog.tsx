@@ -74,37 +74,84 @@ const ProfileSettingsDialog = ({ profile, onProfileUpdate }: ProfileSettingsDial
   }, [open, profile]);
 
   const handleSaveProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      console.error("No user found");
+      toast.error("Du måste vara inloggad");
+      return;
+    }
+    
     setSavingProfile(true);
-
+    
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          display_name: displayName || null,
-          location: location || null,
-          bio: bio || null,
-          is_searchable: isSearchable,
-          allow_direct_messages: allowDirectMessages,
-        })
-        .eq("user_id", user.id);
+      console.log("Saving profile with data:", {
+        displayName,
+        location,
+        bio,
+        isSearchable,
+        allowDirectMessages,
+        userId: user.id
+      });
 
-      if (error) throw error;
+      // Validera data innan skicka
+      if (!displayName || displayName.trim().length === 0) {
+        console.error("Display name is empty");
+        toast.error("Namn får inte vara tomt");
+        return;
+      }
+
+      const updateData: any = {
+        display_name: displayName.trim(),
+        bio: bio?.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log("Update data:", updateData);
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("user_id", user.id)
+        .select("*");
+
+      console.log("Supabase response:", { data, error });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      if (!data || data.length === 0) {
+        console.error("No data returned from update");
+        throw new Error("Ingen data returnerades från uppdateringen");
+      }
+
+      const updatedProfile = data[0];
+      console.log("Updated profile:", updatedProfile);
 
       onProfileUpdate({
         ...profile,
-        display_name: displayName || null,
-        location: location || null,
-        bio: bio || null,
-        is_searchable: isSearchable,
-        allow_direct_messages: allowDirectMessages,
+        ...updatedProfile,
       });
 
       toast.success("Profilen har uppdaterats");
       setOpen(false);
     } catch (err) {
-      console.error("Error saving profile:", err);
-      toast.error("Kunde inte spara profilen");
+      console.error("Full error object:", err);
+      
+      let errorMessage = "Okänt fel";
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        console.error("Error message:", err.message);
+        console.error("Error stack:", err.stack);
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+        console.error("String error:", err);
+      } else {
+        console.error("Unknown error type:", typeof err, err);
+      }
+      
+      toast.error(`Kunde inte spara profilen: ${errorMessage}`);
     } finally {
       setSavingProfile(false);
     }

@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 const signupSchema = loginSchema.extend({
-  displayName: z.string().min(2, "Namn måste vara minst 2 tecken"),
+  displayName: z.string().min(2, "Namn måste vara minst 2 tecken").max(50, "Namn får vara max 50 tecken"),
 });
 
 const Auth = () => {
@@ -252,7 +252,7 @@ const Auth = () => {
               {!isLogin && (
                 <div>
                   <label className="text-sm text-muted-foreground mb-1.5 block">
-                    Ditt namn
+                    Ditt namn <span className="text-destructive">*</span>
                   </label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -261,11 +261,15 @@ const Auth = () => {
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Förnamn Efternamn"
                       className="pl-12"
+                      required
                     />
                   </div>
                   {errors.displayName && (
                     <p className="text-destructive text-xs mt-1">{errors.displayName}</p>
                   )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Detta namn kommer att visas på din profil och i annonser
+                  </p>
                 </div>
               )}
 
