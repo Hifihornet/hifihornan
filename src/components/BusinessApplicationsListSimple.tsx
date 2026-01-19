@@ -52,8 +52,13 @@ export const BusinessApplicationsListSimple = () => {
   };
 
   const handleApprove = async (application: any) => {
+    console.log('=== HANDLE APPROVE START ===');
+    console.log('Application:', application);
+    
     setIsProcessing(true);
     try {
+      console.log('Trying to send business invitation...');
+      
       // Skicka inbjudan via email
       const invitationResult = await sendBusinessInvitation({
         companyName: application.company_name,
@@ -62,23 +67,78 @@ export const BusinessApplicationsListSimple = () => {
         adminNotes: adminNotes
       });
 
+      console.log('Invitation result:', invitationResult);
+
+      let token = '';
       if (!invitationResult.success) {
-        throw new Error('Kunde inte skicka inbjudan');
+        console.log('Email failed, generating token manually...');
+        // Fallback: generera token manuellt
+        token = generateInvitationToken();
+        console.log('Generated token manually:', token);
+        
+        console.log('Saving invitation to database...');
+        // Spara inbjudan manuellt
+        const { error: insertError } = await supabase
+          .from('business_invitations' as any)
+          .insert({
+            email: application.contact_email,
+            company_name: application.company_name,
+            contact_name: application.contact_name,
+            token: token,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          });
+
+        if (insertError) {
+          console.error('Error saving invitation:', insertError);
+          
+          // Om det är duplicate key, hämta befintlig token
+          if (insertError.code === '23505') {
+            console.log('Duplicate email, checking existing invitation...');
+            const { data: existingInvitation } = await supabase
+              .from('business_invitations' as any)
+              .select('token')
+              .eq('email', application.contact_email)
+              .eq('status', 'pending')
+              .single();
+            
+            if (existingInvitation) {
+              console.log('Found existing invitation with token:', existingInvitation.token);
+              token = (existingInvitation as any).token;
+              console.log('Using existing token instead of creating new one');
+            } else {
+              throw insertError;
+            }
+          } else {
+            throw insertError;
+          }
+        } else {
+          console.log('Invitation saved to database');
+        }
+      } else {
+        token = invitationResult.token;
+        console.log('Email succeeded, token:', token);
       }
 
+      console.log('Updating application status...');
       // Uppdatera status till approved
       const { error: updateError } = await supabase
         .from('business_applications' as any)
         .update({ 
           status: 'approved',
-          admin_notes: adminNotes,
+          admin_notes: adminNotes ? adminNotes + '\n\nToken: ' + token : 'Token: ' + token,
           updated_at: new Date().toISOString()
         })
         .eq('id', application.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating application:', updateError);
+        throw updateError;
+      }
 
-      toast.success('Ansökan godkänd! Inbjudan har skickats till företaget.');
+      console.log('Token saved to admin notes:', token);
+      toast.success('Ansökan godkänd! Inbjudan skapad (se admin notes för token).');
       fetchApplications();
       setSelectedApplication(null);
       setAdminNotes('');
@@ -87,7 +147,13 @@ export const BusinessApplicationsListSimple = () => {
       toast.error('Kunde inte godkänna ansökan. Försök igen.');
     } finally {
       setIsProcessing(false);
+      console.log('=== HANDLE APPROVE END ===');
     }
+  };
+
+  const generateInvitationToken = (): string => {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
   };
 
   const handleReject = async (application: any) => {

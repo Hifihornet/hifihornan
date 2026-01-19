@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,7 @@ interface BusinessRegistrationData {
 
 export const BusinessRegistration = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<BusinessRegistrationData>({
     company_name: '',
@@ -38,6 +40,8 @@ export const BusinessRegistration = () => {
     setLoading(true);
 
     try {
+      console.log('Submitting business application:', formData);
+      
       // Skapa företagsansökan
       const { data, error } = await supabase
         .from('business_applications' as any)
@@ -48,9 +52,20 @@ export const BusinessRegistration = () => {
           created_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      console.log('Insert result:', { data, error });
 
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Application submitted successfully:', data);
       toast.success('Ansökan skickad! Vi granskar och återkommer inom 2-3 arbetsdagar.');
+      
+      // Redirect till startsidan efter 2 sekunder
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
       
       // Återställ formulär
       setFormData({
@@ -65,7 +80,7 @@ export const BusinessRegistration = () => {
       });
     } catch (error) {
       console.error('Error submitting business application:', error);
-      toast.error('Kunde inte skicka ansökan. Försök igen.');
+      toast.error(`Kunde inte skicka ansökan: ${error instanceof Error ? error.message : 'Okänt fel'}`);
     } finally {
       setLoading(false);
     }
@@ -144,13 +159,13 @@ export const BusinessRegistration = () => {
             </div>
             
             <div>
-              <Label htmlFor="website">Hemsida</Label>
+              <Label htmlFor="website">Hemsida (valfritt)</Label>
               <Input
                 id="website"
                 type="url"
                 value={formData.website}
                 onChange={(e) => handleInputChange('website', e.target.value)}
-                placeholder="https://www.foretag.se"
+                placeholder="https://www.foretag.se (valfritt)"
               />
             </div>
           </div>
