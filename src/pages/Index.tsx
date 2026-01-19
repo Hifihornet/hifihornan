@@ -131,6 +131,24 @@ const Index = () => {
                 </>
               )}
             </div>
+
+            {/* Vinylhyllan och Företagskonto länkar */}
+            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 animate-fade-in-up delay-500">
+              <Link to="/browse?category=vinyl">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto text-base lg:text-lg px-6 lg:px-8 border-2">
+                  <Disc className="w-5 h-5 lg:w-6 lg:h-6 mr-2" />
+                  🎵 Vinylhyllan
+                  <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 ml-2" />
+                </Button>
+              </Link>
+              <Link to="/business-registration">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto text-base lg:text-lg px-6 lg:px-8">
+                  <Users className="w-5 h-5 lg:w-6 lg:h-6 mr-2" />
+                  🏢 Företagskonto
+                  <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 ml-2" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
