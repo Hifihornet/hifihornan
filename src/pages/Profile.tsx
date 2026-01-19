@@ -63,6 +63,12 @@ interface ListingWithStatus extends Listing {
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
+  
+  console.log("=== URL DEBUG ===");
+  console.log("Current URL:", window.location.href);
+  console.log("userId from params:", userId);
+  console.log("==================");
+  
   const { isCreator, isStore, isAdmin, isModerator } = useUserRoles(userId);
   const isUserOnline = useIsUserOnline(userId);
   
@@ -217,25 +223,85 @@ const Profile = () => {
   const fetchProfileAndListings = useCallback(async () => {
     if (!userId) return;
 
+    console.log("=== PROFILE DEBUG ===");
+    console.log("userId from URL:", userId);
+    console.log("Current user id:", user?.id);
+    console.log("Are they the same?", user?.id === userId);
+    console.log("===================");
+
     try {
       let profileData;
       
       if (user?.id === userId) {
+        console.log("Fetching own profile from profiles table");
+        const { data, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)  // Bara user_id, inte profiles.user_id
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+        profileData = data;
+        console.log('Own profile data received:', profileData);
+      } else {
+        console.log("Fetching public profile directly from profiles table");
+        
+        // Försök först med vanlig profil (RLS)
         const { data, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", userId)
           .maybeSingle();
 
-        if (profileError) throw profileError;
-        profileData = data;
-        console.log('Profile data received:', profileData);
-      } else {
-        const { data, error: profileError } = await supabase
-          .rpc('get_public_profile_by_user_id', { _user_id: userId });
-
-        if (profileError) throw profileError;
-        profileData = data && data.length > 0 ? { ...data[0], location: null } : null;
+        if (!profileError && data) {
+          profileData = data;
+          console.log('Public profile data received:', profileData);
+        } else {
+          // Om RLS blockerar, försök med admin RPC om du är admin
+          console.log("RLS blocked access, trying admin RPC");
+          
+          try {
+            const { data: adminData, error: adminError } = await supabase.rpc('admin_get_profile_simple', { 
+              target_user_id: userId 
+            });
+            
+            if (adminError) {
+              console.log("Admin RPC failed:", adminError);
+              setError("Profilen kunde inte hittas eller så har du inte behörighet att se den");
+              setLoading(false);
+              return;
+            }
+            
+            if (adminData && Array.isArray(adminData) && adminData.length > 0) {
+              // Konvertera admin data till profile format
+              profileData = {
+                user_id: adminData[0].user_id,
+                display_name: adminData[0].display_name,
+                created_at: adminData[0].created_at,
+                is_admin: adminData[0].is_admin,
+                is_verified_seller: adminData[0].is_verified_seller,
+                // Lägg till andra fält som behövs
+                avatar_url: null,
+                bio: null,
+                location: null,
+                website: null,
+                setup_images: [],
+                updated_at: adminData[0].created_at
+              };
+              console.log('Admin profile data received:', profileData);
+            } else {
+              console.log("Profile not found for user_id:", userId);
+              setError("Profilen kunde inte hittas");
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.log("Admin RPC error:", err);
+            setError("Profilen kunde inte hittas eller så har du inte behörighet att se den");
+            setLoading(false);
+            return;
+          }
+        }
       }
       
       if (!profileData) {
@@ -479,9 +545,14 @@ const Profile = () => {
 
   // Funktion för att få visningsnamn
   const getDisplayName = (profile: Profile | null, user: any) => {
-    if (!profile || !user) return "Okänd användare";
+    if (!profile) return "Okänd användare";
     
-    // Om display_name är "Användare" eller tomt, använd e-post användarnamn
+    // För andra användares profiler, visa bara vad som finns i profilen
+    if (!isOwnProfile) {
+      return profile.display_name || "Användare";
+    }
+    
+    // För egen profil, använd e-post fallback om det behövs
     if (!profile.display_name || profile.display_name === "Användare") {
       const emailUsername = user.email?.split('@')[0] || "Användare";
       return emailUsername;

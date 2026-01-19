@@ -94,6 +94,12 @@ const ListingDetail = () => {
 
           // Store seller ID for profile link
           setSellerId(data.user_id);
+          console.log("=== LISTING DEBUG ===");
+          console.log("Listing user_id:", data.user_id);
+          console.log("Current user id:", user?.id);
+          console.log("Are they the same?", data.user_id === user?.id);
+          console.log("==================");
+          
           setListingStatus(data.status || "active");
           
           // Check if seller is a store account
@@ -102,13 +108,36 @@ const ListingDetail = () => {
           
           // Use secure function to get seller display name
           let sellerDisplayName = "Säljare";
-          // if (data.user_id) {
-          //   const { data: nameData } = await supabase
-          //     .rpc('get_seller_display_name', { _user_id: data.user_id });
-          //   if (nameData) {
-          //     sellerDisplayName = nameData;
-          //   }
-          // }
+          console.log("Fetching seller name for user_id:", data.user_id);
+          
+          if (data.user_id) {
+            try {
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('display_name')
+                .eq('user_id', data.user_id)  // Bara user_id, inte profiles.user_id
+                .single();
+              
+              console.log("Profile data result:", { profileData, profileError });
+              
+              if (profileData?.display_name && profileData.display_name !== "Användare") {
+                sellerDisplayName = profileData.display_name;
+                console.log("Using display_name from profile:", sellerDisplayName);
+              } else if (profileData?.display_name === "Användare") {
+                sellerDisplayName = "Användare";
+                console.log("Profile has default name, showing 'Användare':", sellerDisplayName);
+              } else {
+                // RLS blockerade åtkomst eller ingen profil - visa "Säljare"
+                sellerDisplayName = "Säljare";
+                console.log("RLS blocked or no profile found, using default:", sellerDisplayName);
+              }
+            } catch (error) {
+              console.log("Could not fetch seller profile (RLS blocked), using default:", error);
+              sellerDisplayName = "Säljare";
+            }
+          }
+          
+          console.log("Final sellerDisplayName:", sellerDisplayName);
 
           setListing({
             id: data.id,

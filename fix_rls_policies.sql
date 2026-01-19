@@ -1,0 +1,164 @@
+-- ============================================
+-- FIX RLS POLICIES - TA BORT DUBBELLA POLICIES
+-- ============================================
+
+-- Ta bort alla befintliga policies för att undvika konflikter
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Anyone can view all listings" ON listings;
+DROP POLICY IF EXISTS "Users can update own listings" ON listings;
+DROP POLICY IF EXISTS "Users can insert own listings" ON listings;
+DROP POLICY IF EXISTS "Users can delete own listings" ON listings;
+DROP POLICY IF EXISTS "Admins can manage all listings" ON listings;
+DROP POLICY IF EXISTS "Admins can view all listings" ON listings;
+DROP POLICY IF EXISTS "Users can view own conversations" ON conversations;
+DROP POLICY IF EXISTS "Users can insert conversations" ON conversations;
+DROP POLICY IF EXISTS "Users can insert own conversations" ON conversations;
+DROP POLICY IF EXISTS "Users can update own conversations" ON conversations;
+DROP POLICY IF EXISTS "Users can view own conversations" ON conversations;
+DROP POLICY IF EXISTS "Admins can view all conversations" ON conversations;
+DROP POLICY IF EXISTS "Users can insert messages in own conversations" ON messages;
+DROP POLISY IF EXISTS "Users can insert own messages" ON messages;
+DROP POLICY IF EXISTS "Users can update own messages" ON messages;
+DROP POLICY IF EXISTS "Users can view messages in own conversations" ON messages;
+DROP POLICY IF EXISTS "Users can view own messages" ON messages;
+DROP POLICY IF EXISTS "Admins can view all messages" ON messages;
+
+-- ============================================
+-- SKAPA NYA RENSLIGA POLICIER
+-- ============================================
+
+-- PROFILES TABLE - Endast strikta men tillåt admin
+CREATE POLICY "Users can view own profile" ON profiles
+  FOR SELECT USING (auth.uid() = profiles.user_id);
+
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = profiles.user_id);
+
+CREATE POLICY "Users can insert own profile" ON profiles
+  FOR INSERT WITH CHECK (auth.uid() = profiles.user_id);
+
+-- Admin kan se alla profiler (för övervakning)
+CREATE POLICY "Admins can view all profiles" ON profiles
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.user_id = auth.uid() 
+      AND profiles.is_admin = true
+    )
+  );
+
+-- Admin kan uppdatera profiler (för support)
+CREATE POLICY "Admins can update profiles" ON profiles
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.user_id = auth.uid() 
+      AND profiles.is_admin = true
+    )
+  );
+
+-- LISTINGS TABLE - Publika för alla, ändras av ägare
+CREATE POLICY "Anyone can view all listings" ON listings
+  FOR SELECT USING (true);
+
+CREATE POLICY "Users can manage own listings" ON listings
+  FOR ALL USING (auth.uid() = listings.user_id);
+
+-- Admin kan hantera alla annonser (för moderation)
+CREATE POLICY "Admins can manage all listings" ON listings
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.user_id = auth.uid() 
+      AND profiles.is_admin = true
+    )
+  );
+
+-- CONVERSATIONS TABLE
+CREATE POLICY "Users can view own conversations" ON conversations
+  FOR SELECT USING (auth.uid() IN (conversations.buyer_id, conversations.seller_id));
+
+CREATE POLICY "Users can manage own conversations" ON conversations
+  FOR ALL USING (auth.uid() IN (conversations.buyer_id, conversations.seller_id));
+
+CREATE POLICY "Users can insert conversations" ON conversations
+  FOR INSERT WITH CHECK (auth.uid() = conversations.buyer_id);
+
+-- Admin kan se alla konversationer
+CREATE POLICY "Admins can view all conversations" ON conversations
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.user_id = auth.uid() 
+      AND profiles.is_admin = true
+    )
+  );
+
+-- Admin kan hantera alla konversationer
+CREATE POLICY "Admins can manage conversations" ON conversations
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.user_id = auth.uid() 
+      AND profiles.is_admin = true
+    )
+  );
+
+-- MESSAGES TABLE
+CREATE POLICY "Users can view messages in own conversations" ON messages
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM conversations 
+      WHERE conversations.id = messages.conversation_id
+      AND (conversations.buyer_id = auth.uid() OR conversations.seller_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Users can insert messages in own conversations" ON messages
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM conversations 
+      WHERE conversations.id = messages.conversation_id
+      AND (conversations.buyer_id = auth.uid() OR conversations.seller_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Users can update own messages" ON messages
+  FOR UPDATE USING (messages.sender_id = auth.uid());
+
+-- Admin kan se alla meddelanden
+CREATE POLICY "Admins can view all messages" ON messages
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.user_id = auth.uid() 
+      AND profiles.is_admin = true
+    )
+  );
+
+-- Admin kan hantera alla meddelanden
+CREATE POLICY "Admins can manage messages" ON messages
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.user_id = auth.uid() 
+      AND profiles.is_admin = true
+    )
+  );
+
+-- ============================================
+-- VERIFIERING
+-- ============================================
+
+-- Kontrollera att policies är skapade korrekt
+SELECT 
+  tablename,
+  policyname,
+  cmd,
+  permissive
+FROM pg_policies 
+WHERE schemaname = 'public' 
+ORDER BY tablename, policyname;
