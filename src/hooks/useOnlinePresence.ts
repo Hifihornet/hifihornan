@@ -128,15 +128,16 @@ export const useIsUserOnline = (userId: string | undefined) => {
 
     const channel = supabase.channel(PRESENCE_CHANNEL, {
       config: {
-        presence: {
-          key: observerKey,
-        },
+        broadcast: { self: true },
+        presence: { key: observerKey },
       },
     });
 
     const handleSync = () => {
-      const state = channel.presenceState<OnlineUser>();
-      setIsOnline(userId in state);
+      const presenceState = channel.presenceState();
+      const userPresence = presenceState[userId];
+      const isUserOnline = userPresence && userPresence.length > 0;
+      setIsOnline(isUserOnline);
     };
 
     channel
@@ -145,16 +146,29 @@ export const useIsUserOnline = (userId: string | undefined) => {
       .on("presence", { event: "leave" }, handleSync)
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await channel.track({
-            id: observerKey,
-            online_at: new Date().toISOString(),
-          });
-          setTimeout(handleSync, 0);
+          try {
+            await channel.track({
+              id: observerKey,
+              online_at: new Date().toISOString(),
+            });
+            setTimeout(handleSync, 0);
+          } catch (error) {
+            console.error("Error tracking presence:", error);
+            // Fallback: sätt isOnline till false om tracking misslyckas
+            setIsOnline(false);
+          }
+        } else if (status === "CHANNEL_ERROR") {
+          console.error("Channel error in presence tracking");
+          setIsOnline(false);
         }
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        supabase.removeChannel(channel);
+      } catch (error) {
+        console.error("Error removing channel:", error);
+      }
     };
   }, [observerKey, userId]);
 

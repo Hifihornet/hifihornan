@@ -60,22 +60,39 @@ const SupportChat = () => {
     }
 
     const checkUnread = async () => {
-      const { data: conversations } = await supabase
-        .from("conversations")
-        .select("id")
-        .is("listing_id", null)
-        .eq("buyer_id", user.id);
+      try {
+        const { data: conversations, error: convError } = await supabase
+          .from("conversations")
+          .select("id")
+          .is("listing_id", null)
+          .eq("buyer_id", user.id);
 
-      if (conversations && conversations.length > 0) {
-        const conversationIds = conversations.map((c) => c.id);
-        const { count } = await supabase
-          .from("messages")
-          .select("*", { count: "exact", head: true })
-          .in("conversation_id", conversationIds)
-          .neq("sender_id", user.id)
-          .is("read_at", null);
+        if (convError) {
+          console.error("Error fetching conversations:", convError);
+          setUnreadCount(0);
+          return;
+        }
 
-        setUnreadCount(count || 0);
+        if (conversations && conversations.length > 0) {
+          const conversationIds = conversations.map((c) => c.id);
+          const { count, error: msgError } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .in("conversation_id", conversationIds)
+            .neq("sender_id", user.id)
+            .is("read_at", null);
+
+          if (msgError) {
+            console.error("Error fetching unread messages:", msgError);
+            setUnreadCount(0);
+            return;
+          }
+
+          setUnreadCount(count || 0);
+        }
+      } catch (error) {
+        console.error("Error in checkUnread:", error);
+        setUnreadCount(0);
       }
     };
 

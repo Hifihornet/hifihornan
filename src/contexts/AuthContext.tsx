@@ -59,20 +59,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // After successful signup, create profile
     if (!error && data.user) {
       console.log("Creating profile for user:", data.user.id);
+      console.log("Display name to save:", displayName);
       
       try {
+        // Först försök att uppdatera metadata
+        const { error: metadataError } = await supabase.auth.updateUser({
+          data: { display_name: displayName }
+        });
+        
+        if (metadataError) {
+          console.error("Error updating user metadata:", metadataError);
+        } else {
+          console.log("User metadata updated successfully");
+        }
+        
+        // Sedan skapa/uppdatera profil
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             user_id: data.user.id,
             display_name: displayName,
-            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id'
           });
         
         if (profileError) {
-          console.error("Error creating profile:", profileError);
+          console.error("Error creating/updating profile:", profileError);
         } else {
-          console.log("Profile created successfully");
+          console.log("Profile created/updated successfully with display_name:", displayName);
         }
       } catch (err) {
         console.error("Error in profile creation:", err);
