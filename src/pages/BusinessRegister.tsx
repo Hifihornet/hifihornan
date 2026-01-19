@@ -80,6 +80,9 @@ const BusinessRegister = () => {
     setSubmitting(true);
 
     try {
+      // Vänta 3 sekunder för att undvika rate limiting
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
       // Skapa konto
       const { error: signUpError } = await signUp(formData.email, formData.password);
 
@@ -96,11 +99,20 @@ const BusinessRegister = () => {
 
       if (updateError) throw updateError;
 
-      toast.success('Konto skapat! Du kan nu logga in.');
-      navigate('/login');
+      // Hoppa över ALL manuell profile creation - låt Supabase hantera allt automatiskt
+      toast.success('Konto skapat! Du kan nu logga in på startsidan.');
+      navigate('/'); // <-- FIXAD: Ändrat från '/login' till '/'
     } catch (error) {
       console.error('Error creating account:', error);
-      setError('Kunde inte skapa konto. Försök igen.');
+      
+      // Hantera rate limiting specifikt
+      if (error instanceof Error && error.message.includes('Too Many Requests')) {
+        setError('För många försök. Vänligen vänta en stund och försök igen.');
+      } else if (error instanceof Error && error.message.includes('after 0 seconds')) {
+        setError('Vänligen vänta en stund och försök igen.');
+      } else {
+        setError('Kunde inte skapa konto. Försök igen.');
+      }
     } finally {
       setSubmitting(false);
     }
