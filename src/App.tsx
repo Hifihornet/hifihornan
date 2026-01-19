@@ -35,6 +35,10 @@ const Achievements = lazy(() => import("./pages/Achievements"));
 const SavedSearches = lazy(() => import("./pages/SavedSearches"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CookieSettings = lazy(() => import("./pages/CookieSettings"));
+const VinylHyllan = lazy(() => import("./pages/VinylShop"));
+const VinylShop = lazy(() => import("./pages/VinylHyllan"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
 
 const queryClient = new QueryClient();
 
@@ -79,6 +83,10 @@ const AppRoutes = () => (
       <Route path="/business" element={<Business />} />
       <Route path="/showcase" element={<Showcase />} />
       <Route path="/bevakningar" element={<SavedSearches />} />
+      <Route path="/vinylhyllan" element={<VinylHyllan />} />
+      <Route path="/vinylshop" element={<VinylShop />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/order-success" element={<OrderSuccess />} />
       <Route path="/aterstall-losenord" element={<ResetPassword />} />
       <Route path="/cookie-installningar" element={<CookieSettings />} />
       <Route path="*" element={<NotFound />} />

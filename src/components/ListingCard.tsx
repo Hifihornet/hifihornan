@@ -89,16 +89,50 @@ const ListingCard = ({ listing, isStoreAccount = false, isVerifiedSeller = false
     >
       <div className="aspect-[4/3] relative overflow-hidden bg-secondary">
         {listing.images && listing.images.length > 0 && listing.images[0] ? (
-          <img
-            src={listing.images[0]}
-            alt={listing.title}
-            crossOrigin="anonymous"
-            referrerPolicy="no-referrer"
-            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isSold ? "grayscale" : ""}`}
-          />
+          <>
+            <img
+              src={listing.images[0]}
+              alt={listing.title}
+              crossOrigin="anonymous"
+              referrerPolicy="no-referrer"
+              className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isSold ? "grayscale" : ""}`}
+              onError={(e) => {
+                console.error("Image failed to load:", listing.images[0], e);
+                e.currentTarget.style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log("Image loaded successfully:", listing.images[0]);
+              }}
+            />
+            {/* Fallback om bilden inte laddas */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center text-muted-foreground bg-secondary"
+              style={{ display: 'none' }}
+              ref={(el) => {
+                if (el) {
+                  const img = el.previousElementSibling as HTMLImageElement;
+                  if (img && img.naturalWidth === 0) {
+                    el.style.display = 'flex';
+                  }
+                }
+              }}
+            >
+              <div className="text-center">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-6 h-6 bg-gray-400 rounded"></div>
+                </div>
+                <p className="text-sm">Bilden kunde inte laddas</p>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            Ingen bild
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-6 h-6 bg-gray-400 rounded"></div>
+              </div>
+              <p className="text-sm">Ingen bild</p>
+            </div>
           </div>
         )}
         

@@ -291,6 +291,9 @@ const Profile = () => {
         createdAt: item.created_at,
         status: item.status,
       }));
+      
+      console.log("Profile data:", profileData); // Debug logging
+      console.log("Formatted listings:", formattedListings); // Debug logging
 
       setListings(formattedListings);
     } catch (err) {

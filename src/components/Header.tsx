@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, Menu, X, User, Heart, Settings, LogOut, Plus, MessageCircle, Bell, Shield, ChevronDown, MessageSquare } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, User, Heart, Settings, LogOut, Plus, MessageCircle, Bell, Shield, ChevronDown, MessageSquare, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -31,6 +31,7 @@ const Header = () => {
     { href: "/forum", label: "Forum" },
     { href: "/blogg", label: "Nyheter" },
     { href: "/showcase", label: "Showcase" },
+    { href: "/vinylhyllan", label: "VinylHyllan" },
   ];
 
   const handleSignOut = async () => {
@@ -56,7 +57,7 @@ const Header = () => {
               <Link
                 key={link.href}
                 to={link.href}
-                className={cnUtil(
+                className={cn(
                   "text-sm font-medium transition-colors hover:text-primary",
                   location.pathname === link.href ? "text-primary" : "text-muted-foreground"
                 )}
@@ -135,6 +136,18 @@ const Header = () => {
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
+                          <Link to="/vinylshop" className="cursor-pointer">
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            VinylShop
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/vinylhyllan" className="cursor-pointer">
+                            <Music className="w-4 h-4 mr-2" />
+                            VinylHyllan
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
                           <Link to="/admin" className="cursor-pointer">
                             <Shield className="w-4 h-4 mr-2" />
                             Admin Dashboard
@@ -183,7 +196,7 @@ const Header = () => {
                   key={link.href}
                   to={link.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className={cnUtil(
+                  className={cn(
                     "px-4 py-3 text-sm font-medium transition-colors hover:text-primary border-b border-border/50",
                     location.pathname === link.href ? "text-primary" : "text-muted-foreground"
                   )}
@@ -220,7 +233,7 @@ const Header = () => {
                             </span>
                           )}
                         </span>
-                        <ChevronDown className={cnUtil(
+                        <ChevronDown className={cn(
                           "w-4 h-4 transition-transform duration-200",
                           isProfileOpen && "rotate-180"
                         )} />

@@ -41,6 +41,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, displayName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
+    console.log("Signing up with:", { email, displayName }); // Debug logging
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -51,6 +53,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       },
     });
+    
+    console.log("Sign up result:", { data, error }); // Debug logging
+    
+    // After successful signup, create profile
+    if (!error && data.user) {
+      console.log("Creating profile for user:", data.user.id);
+      
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: data.user.id,
+            display_name: displayName,
+            created_at: new Date().toISOString(),
+          });
+        
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+        } else {
+          console.log("Profile created successfully");
+        }
+      } catch (err) {
+        console.error("Error in profile creation:", err);
+      }
+    }
     
     return { error, data: data ? { user: data.user } : null };
   };
