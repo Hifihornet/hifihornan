@@ -43,6 +43,7 @@ import AdminListingEditor from "@/components/admin/AdminListingEditor";
 import AdminSearchFilters from "@/components/admin/AdminSearchFilters";
 import AdminRoleManager from "@/components/admin/AdminRoleManager";
 import AdminGdprTab from "@/components/admin/AdminGdprTab";
+import { BusinessApplicationsListSimple } from "@/components/BusinessApplicationsListSimple";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1480,6 +1481,14 @@ const AdminDashboard = () => {
                 </TabsTrigger>
               )}
             </TabsList>
+
+            {/* Business Applications Link */}
+            <div className="mb-6">
+              <Link to="/admin/business" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                <Store className="w-4 h-4" />
+                Hantera företagsansökningar
+              </Link>
+            </div>
 
             {/* Listings Tab */}
             <TabsContent value="listings">
