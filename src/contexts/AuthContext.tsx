@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session, AuthError, signInWithPassword as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut } from '@supabase/supabase-js';
+import { User, Session, AuthError, createClientComponentClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -49,9 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     try {
-      const { data, error } = await supabaseSignUp(email, password, {
-        data: {
-          display_name: displayName || email.split('@')[0]
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName || email.split('@')[0]
+          }
         }
       });
 
@@ -74,7 +78,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabaseSignIn(email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       return { error };
     } catch (error) {
       console.error('Signin error:', error);
@@ -84,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      await supabaseSignOut();
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Signout error:', error);
     }
