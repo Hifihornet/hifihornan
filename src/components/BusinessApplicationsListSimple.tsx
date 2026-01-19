@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Check, X, Eye, Building2, Mail, Phone, MapPin, Globe, FileText, User } from 'lucide-react';
+import { sendBusinessInvitation } from '@/services/emailService';
 
 export const BusinessApplicationsListSimple = () => {
   const [applications, setApplications] = useState<any[]>([]);
@@ -53,25 +54,19 @@ export const BusinessApplicationsListSimple = () => {
   const handleApprove = async (application: any) => {
     setIsProcessing(true);
     try {
-      // Flytta till business_accounts
-      const { error: moveError } = await supabase
-        .from('business_accounts' as any)
-        .insert({
-          user_id: application.user_id,
-          company_name: application.company_name,
-          contact_name: application.contact_name,
-          contact_email: application.contact_email,
-          contact_phone: application.contact_phone,
-          address: application.address,
-          website: application.website,
-          description: application.description,
-          org_number: application.org_number,
-          is_verified: true
-        });
+      // Skicka inbjudan via email
+      const invitationResult = await sendBusinessInvitation({
+        companyName: application.company_name,
+        contactName: application.contact_name,
+        contactEmail: application.contact_email,
+        adminNotes: adminNotes
+      });
 
-      if (moveError) throw moveError;
+      if (!invitationResult.success) {
+        throw new Error('Kunde inte skicka inbjudan');
+      }
 
-      // Uppdatera status i business_applications
+      // Uppdatera status till approved
       const { error: updateError } = await supabase
         .from('business_applications' as any)
         .update({ 
@@ -83,13 +78,13 @@ export const BusinessApplicationsListSimple = () => {
 
       if (updateError) throw updateError;
 
-      toast.success('Ansökan godkänd! Företaget har fått tillgång.');
+      toast.success('Ansökan godkänd! Inbjudan har skickats till företaget.');
       fetchApplications();
       setSelectedApplication(null);
       setAdminNotes('');
     } catch (error) {
       console.error('Error approving application:', error);
-      toast.error('Kunde inte godkänna ansökan');
+      toast.error('Kunde inte godkänna ansökan. Försök igen.');
     } finally {
       setIsProcessing(false);
     }

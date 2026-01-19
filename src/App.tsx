@@ -41,6 +41,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
 const BusinessRegistration = lazy(() => import("./pages/BusinessRegistration"));
 const AdminBusiness = lazy(() => import("./pages/AdminBusiness"));
+const BusinessRegister = lazy(() => import("./pages/BusinessRegister"));
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const AppRoutes = () => (
       <Route path="/order-success" element={<OrderSuccess />} />
       <Route path="/business-registration" element={<BusinessRegistration />} />
       <Route path="/admin/business" element={<AdminBusiness />} />
+      <Route path="/business-register" element={<BusinessRegister />} />
       <Route path="/aterstall-losenord" element={<ResetPassword />} />
       <Route path="/cookie-installningar" element={<CookieSettings />} />
       <Route path="*" element={<NotFound />} />
