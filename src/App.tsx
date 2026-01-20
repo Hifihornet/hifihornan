@@ -35,7 +35,7 @@ const Achievements = lazy(() => import("./pages/Achievements"));
 const SavedSearches = lazy(() => import("./pages/SavedSearches"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CookieSettings = lazy(() => import("./pages/CookieSettings"));
-const VinylHyllan = lazy(() => import("./pages/PublicVinylHyllan"));
+const VinylHyllan = lazy(() => import("./pages/VinylHyllan"));
 const VinylShop = lazy(() => import("./pages/VinylShop"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
