@@ -276,16 +276,6 @@ const VinylHyllan = () => {
                 <Users className="w-4 h-4" />
                 Forum
               </Button>
-              
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/vinylhyllan")}
-                className="flex items-center gap-2 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
-              >
-                <Music className="w-4 h-4" />
-                VinylHyllan
-              </Button>
             </div>
           </div>
         </CardContent>
