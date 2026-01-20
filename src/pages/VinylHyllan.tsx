@@ -72,7 +72,7 @@ const VinylShop = () => {
       // TODO: Load vinyls from database
       // const { data } = await supabase.from("vinyl_catalog").select("*").eq("company_id", user?.id);
       
-      // Mock data för demo
+      // Mock data for now
       const mockVinyls: VinylRecord[] = [
         {
           id: "1",
@@ -81,12 +81,12 @@ const VinylShop = () => {
           artist: "The Beatles",
           title: "Abbey Road",
           year: 1969,
-          label: "Apple",
+          label: "Apple Records",
           catalog_number: "SO 383",
           condition: "Mint",
           price: 299,
           in_stock: true,
-          image_url: "https://upload.wikimedia.org/wikipedia/commons/4/42/Beatles_-_Abbey_Road.jpg",
+          image_url: "https://i.discogs.com/...",
           genre: ["Rock"],
           style: ["Psychedelic Rock", "Pop Rock"],
           format: "LP",
@@ -106,7 +106,7 @@ const VinylShop = () => {
           condition: "Near Mint",
           price: 349,
           in_stock: true,
-          image_url: "https://picsum.photos/seed/darkside/400/400.jpg",
+          image_url: "https://i.discogs.com/...",
           genre: ["Rock"],
           style: ["Progressive Rock", "Psychedelic Rock"],
           format: "LP",
@@ -126,7 +126,7 @@ const VinylShop = () => {
           condition: "Very Good Plus",
           price: 499,
           in_stock: false,
-          image_url: "https://picsum.photos/seed/kindofblue/400/400.jpg",
+          image_url: "https://i.discogs.com/...",
           genre: ["Jazz"],
           style: ["Modal Jazz", "Cool Jazz"],
           format: "LP",
