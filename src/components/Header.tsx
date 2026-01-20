@@ -32,7 +32,6 @@ const Header = () => {
     { href: "/blogg", label: "Nyheter" },
     { href: "/showcase", label: "Showcase" },
     { href: "/vinylhyllan", label: "VinylHyllan" },
-    { href: "/business-registration", label: "Företagskonto" },
   ];
 
   const handleSignOut = async () => {
