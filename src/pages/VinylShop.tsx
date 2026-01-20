@@ -337,18 +337,6 @@ const VinylHyllan = () => {
                 Forum
               </Button>
               
-              {user && hasBusinessAccess && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => navigate("/vinylshop")}
-                  className="flex items-center gap-2 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
-                >
-                  <Package className="w-4 h-4" />
-                  VinylShop (företag)
-                </Button>
-              )}
-              
               <Button
                 variant="secondary"
                 size="sm"
@@ -356,7 +344,7 @@ const VinylHyllan = () => {
                 className="flex items-center gap-2 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"
               >
                 <Music className="w-4 h-4" />
-                VinylHyllan (publik)
+                VinylHyllan
               </Button>
             </div>
           </div>
@@ -868,18 +856,6 @@ const VinylHyllan = () => {
                 <ArrowLeft className="w-4 h-4" />
                 Tillbaka till startsidan
               </Button>
-              
-              {user && hasBusinessAccess && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/vinylshop")}
-                  className="flex items-center gap-2 text-blue-600"
-                >
-                  <Package className="w-4 h-4" />
-                  VinylShop (företag)
-                </Button>
-              )}
             </div>
           </div>
         </CardContent>
