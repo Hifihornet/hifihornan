@@ -38,7 +38,7 @@ interface VinylRecord {
   discogs_date_added?: string;
 }
 
-const VinylShop = () => {
+const VinylHyllan = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isCreator, isAdmin, isModerator } = useUserRoles(user?.id);
@@ -175,7 +175,7 @@ const VinylShop = () => {
               
               <h2 className="text-2xl font-bold mb-2">Företagskonto krävs</h2>
               <p className="text-muted-foreground mb-6">
-                VinylShop är endast tillgängligt för företag med Creator, Store eller Admin-roll.
+                VinylHyllan är endast tillgängligt för företag med Creator, Store eller Admin-roll.
                 Detta skyddar känslig försäljningsdata och företagsinformation.
               </p>
               
@@ -214,11 +214,6 @@ const VinylShop = () => {
               </div>
               
               <div className="flex gap-4 justify-center mt-8">
-                <Button onClick={() => navigate("/vinylhyllan")} variant="outline">
-                  <Music className="w-4 h-4 mr-2" />
-                  Se VinylHyllan (publik)
-                </Button>
-                
                 <Button onClick={() => navigate("/")}>
                   <Home className="w-4 h-4 mr-2" />
                   Till startsidan
@@ -301,7 +296,7 @@ const VinylShop = () => {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Music className="w-8 h-8 text-blue-600" />
-            VinylShop
+            VinylHyllan
           </h1>
           <p className="text-muted-foreground mt-2">
             Hantera ditt vinylsortiment med Discogs integration
@@ -425,16 +420,13 @@ const VinylShop = () => {
                 <ArrowLeft className="w-4 h-4" />
                 Tillbaka till startsidan
               </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/vinylhyllan")}
-                className="flex items-center gap-2 text-blue-600"
-              >
-                <Music className="w-4 h-4" />
-                Se VinylHyllan (publik)
-              </Button>
+            </div>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  2024 HiFiHörnet. Alla rättigheter reserverade.
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -443,4 +435,4 @@ const VinylShop = () => {
   );
 };
 
-export default VinylShop;
+export default VinylHyllan;
