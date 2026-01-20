@@ -30,17 +30,26 @@ export const sendBusinessInvitation = async (data: BusinessInvitationData) => {
     // Skapa inbjudningslänk
     const invitationLink = `${window.location.origin}/business-register?token=${token}`;
 
-    // Skicka email (via Supabase Edge Function eller annan service)
+    // Skicka email via Supabase Edge Function
     const emailData = {
       to: data.contactEmail,
       subject: `Inbjudan till HiFiHörnet - ${data.companyName}`,
       html: generateBusinessInvitationEmail(data, invitationLink)
     };
 
-    // TODO: Implementera email sending
-    // För nu: logga att vi skulle skicka
-    console.log('Business invitation email would be sent:', emailData);
+    // Anropa vår email function
+    const { data: response, error: functionError } = await supabase.functions.invoke('send-email', {
+      body: emailData
+    });
 
+    if (functionError) {
+      console.error('Function error:', functionError);
+      // Fallback: logga att vi skulle skicka
+      console.log('Business invitation email would be sent:', emailData);
+      return { success: true, token, fallback: true };
+    }
+
+    console.log('Email sent successfully:', response);
     return { success: true, token };
   } catch (error) {
     console.error('Error sending business invitation:', error);

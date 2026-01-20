@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Check, X, Eye, Building2, Mail, Phone, MapPin, Globe, FileText, User } from 'lucide-react';
+import { sendBusinessInvitation } from '@/services/emailService';
 
 interface BusinessApplication {
   id: string;
@@ -87,7 +88,21 @@ export const BusinessApplicationsList = () => {
 
       if (updateError) throw updateError;
 
-      toast.success('Ansökan godkänd! Företaget har fått tillgång.');
+      // Skicka mail med inbjudningslänk
+      const emailResult = await sendBusinessInvitation({
+        companyName: application.company_name,
+        contactName: application.contact_name,
+        contactEmail: application.contact_email,
+        adminNotes: adminNotes
+      });
+
+      if (emailResult.success) {
+        toast.success('Ansökan godkänd! Inbjudningsmail har skickats till ' + application.contact_email);
+      } else {
+        toast.success('Ansökan godkänd! Företaget har fått tillgång, men kunde inte skicka mail.');
+        console.error('Email sending failed:', emailResult.error);
+      }
+
       fetchApplications();
       setSelectedApplication(null);
       setAdminNotes('');
