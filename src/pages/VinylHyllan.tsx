@@ -284,7 +284,7 @@ const VinylHyllan = () => {
                 className="flex items-center gap-2 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
               >
                 <Music className="w-4 h-4" />
-                VinylShop
+                VinylHyllan
               </Button>
             </div>
           </div>
